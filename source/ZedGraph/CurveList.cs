@@ -30,8 +30,7 @@ namespace ZedGraph
 	/// 
 	/// <author> John Champion
 	/// modified by Jerry Vos</author>
-	/// <version> $Revision: 3.17 $ $Date: 2005-01-16 03:46:12 $ </version>
-	[Serializable]
+	/// <version> $Revision: 3.12 $ $Date: 2004-12-10 05:45:55 $ </version>
 	public class CurveList : CollectionPlus, ICloneable
 	{
 	#region Properties
@@ -65,45 +64,6 @@ namespace ZedGraph
 				}
 
 				return count;
-			}
-		}
-
-		/// <summary>
-		/// Read only property that returns the number of pie slices in the list (class type is
-		/// <see cref="Pie"/> ).
-		/// </summary>
-		public int NumPies
-		{
-			get
-			{
-				int count = 0;
-				foreach ( CurveItem curve in this )
-				{
-					if ( curve.IsPie )
-						count++;
-				}
-
-				return count;
-			}
-		}
-
-		/// <summary>
-		/// Read only property that determines if all items in the <see cref="CurveList"/> are
-		/// Pies.
-		/// </summary>
-		public bool IsPieOnly
-		{
-			get
-			{
-				bool hasPie = false;
-				foreach ( CurveItem curve in this )
-				{
-					if ( !curve.IsPie )
-						return false;
-					else
-						hasPie = true;
-				}
-				return hasPie;
 			}
 		}
 
@@ -337,29 +297,33 @@ namespace ZedGraph
 			xMinVal = yMinVal = y2MinVal = tXMinVal = tYMinVal = Double.MaxValue;
 			xMaxVal = yMaxVal = y2MaxVal = tXMaxVal = tYMaxVal = Double.MinValue;
 			maxPts = 1;			
-						
-			// Loop over each curve in the collection and examine the data ranges
+			
+			PointPairList sumList = null;
+
+			// Loop over each curve in the collection and examine any that are not a stack bar
 			foreach( CurveItem curve in this )
 			{
-				// For stacked types, use the GetStackRange() method which accounts for accumulated values
-				// rather than simple curve values.
-				if ( ( ( curve is BarItem ) && ( pane.BarType == BarType.Stack || pane.BarType == BarType.PercentStack ) ) ||
-					( ( curve is LineItem ) && pane.LineType == LineType.Stack ) )
+				if ( curve.IsBar && pane.BarType == BarType.Stack )
 				{
-					GetStackRange( pane, curve, ref tXMinVal, ref tYMinVal, ref tXMaxVal, ref tYMaxVal );
+					if ( sumList == null )
+						sumList = (PointPairList) curve.Points.Clone();
+					else if ( pane.BarBase == BarBase.X )
+						sumList.SumY( curve.Points );
+					else
+						sumList.SumX( curve.Points );
+					
+					sumList.GetRange( ref tXMinVal, ref tXMaxVal,
+						ref tYMinVal, ref tYMaxVal, bIgnoreInitial,
+						false, true );
 				}
 				else
-				{
 					// Call the GetRange() member function for the current
 					// curve to get the min and max values
 					curve.GetRange( ref tXMinVal, ref tXMaxVal,
 						ref tYMinVal, ref tYMaxVal, bIgnoreInitial, pane );
-				}
-   				
-				// isYOrd is true if the Y axis is an ordinal type
+   			
 				bool isYOrd = ( ( pane.Y2Axis.IsOrdinal || pane.Y2Axis.IsText ) && curve.IsY2Axis ) ||
 								( ( pane.YAxis.IsOrdinal || pane.YAxis.IsText ) && ! curve.IsY2Axis );
-				// isXOrd is true if the X axis is an ordinal type
 				bool isXOrd = pane.XAxis.IsOrdinal || pane.XAxis.IsText;
    							
 				// For ordinal Axes, the data range is just 1 to Npts
@@ -384,8 +348,6 @@ namespace ZedGraph
 						else if ( tYMaxVal < 0 )
 							tYMaxVal = 0;
    					
-						// for non-ordinal axes, expand the data range slightly for bar charts to
-						// account for the fact that the bar clusters have a width
 						if ( !isXOrd )
 						{
 							tXMinVal -= pane.ClusterScaleWidth / 2.0;
@@ -399,8 +361,6 @@ namespace ZedGraph
 						else if ( tXMaxVal < 0 )
 							tXMaxVal = 0;
    						
-						// for non-ordinal axes, expand the data range slightly for bar charts to
-						// account for the fact that the bar clusters have a width
 						if ( !isYOrd )
 						{
 							tYMinVal -= pane.ClusterScaleWidth / 2.0;
@@ -473,49 +433,79 @@ namespace ZedGraph
 					y2MaxVal = 1;
 				}
 			}
+			//check for single values which may	be	larger than the	totals,	because totals have been        
+			// reduced by	negative values.  If any	are found, adjust max/min values accordingly		   rpk
+			if	( pane.BarType == BarType.Stack)
+				foreach(	CurveItem curve	in this	)
+				{	  
+					if	( curve.IsBar 	)
+					{
+						curve.Points.GetRange( ref tXMinVal, ref tXMaxVal,
+										ref tYMinVal, ref tYMaxVal, bIgnoreInitial, false, true);
+										
+						if	( curve.IsY2Axis )
+						{
+							if	( tYMinVal < y2MinVal )
+								y2MinVal =	tYMinVal;
+							if	( tYMaxVal > y2MaxVal )
+								y2MaxVal	=	tYMaxVal;
+						}
+						else
+						{
+							if	( tYMinVal < yMinVal )
+								yMinVal	=	tYMinVal;
+							if	( tYMaxVal > yMaxVal	)
+								yMaxVal	= tYMaxVal;
+						}
+						
+						if	( tXMinVal < xMinVal )
+							xMinVal	=	tXMinVal;
+						if	( tXMaxVal > xMaxVal	)
+							xMaxVal	= tXMaxVal;
+					}
+				}		
+			
+			//create reasonable min/max values for bartype = percentStack 
+			bool hasNegative = false ;
+			if ( pane.BarType == BarType.PercentStack)
+			{
+				foreach (CurveItem curve in this) 
+				{
+					if ( curve.IsBar)
+						foreach ( PointPair point in curve.Points )
+							if ( point.X < 0 || point.Y < 0 )
+							{
+								hasNegative = true ;		
+								if ( pane.BarBase == BarBase.X )
+								{
+									yMinVal = -100 ;
+									yMaxVal = 100 ;
+								}
+								else
+								{
+									xMinVal = -100 ;
+									xMaxVal = 100 ;
+								}
+								break ;			
+							}
+						if ( hasNegative )
+							break ;
+					}
+				if ( !hasNegative )
+					if ( pane.BarBase == BarBase.X )
+					{
+						yMinVal = 0 ;
+						yMaxVal = 100 ;
+					}
+					else
+					{
+						xMinVal = 0 ;
+						xMaxVal = 100 ;
+					}					
+			}
+						
 		}
 		
-		/// <summary>
-		/// Calculate the range for stacked bars and lines.
-		/// </summary>
-		/// <remarks>This method is required for the stacked
-		/// types because (for bars), the negative values are a separate stack than the positive
-		/// values.  If you just sum up the bars, you will get the sum of the positive plus negative,
-		/// which is less than the maximum positive value and greater than the maximum negative value.
-		/// </remarks>
-		/// <param name="pane">
-		/// A reference to the <see cref="GraphPane"/> object that is the parent or
-		/// owner of this object.
-		/// </param>
-		/// <param name="curve">The <see cref="CurveItem"/> for which to calculate the range</param>
-		/// <param name="tXMinVal">The minimum X value so far</param>
-		/// <param name="tYMinVal">The minimum Y value so far</param>
-		/// <param name="tXMaxVal">The maximum X value so far</param>
-		/// <param name="tYMaxVal">The maximum Y value so far</param>
-		private void GetStackRange( GraphPane pane, CurveItem curve, ref double tXMinVal,
-									ref double tYMinVal, ref double tXMaxVal, ref double tYMaxVal )
-		{
-			BarValueHandler valueHandler = new BarValueHandler( pane );
-			double x, y, lowVal;
-
-			for ( int i=0; i<curve.Points.Count; i++ )
-			{
-				valueHandler.GetBarValues( curve, i, out x, out lowVal, out y );
-				if ( x < tXMinVal )
-					tXMinVal = x;
-				if ( x > tXMaxVal )
-					tXMaxVal = x;
-				if ( lowVal < tYMinVal )
-					tYMinVal = lowVal;
-				if ( y < tYMinVal )
-					tYMinVal = y;
-				if ( lowVal > tYMaxVal )
-					tYMaxVal = lowVal;
-				if ( y > tYMaxVal )
-					tYMaxVal = y;
-			}
-		}
-
 		/// <summary>
 		/// Render all the <see cref="CurveItem"/> objects in the list to the
 		/// specified <see cref="Graphics"/>
@@ -544,8 +534,6 @@ namespace ZedGraph
 			// Count the number of BarItems in the curvelist
 			int pos = this.NumBars;
 			
-			// sorted overlay bars are a special case, since they are sorted independently at each
-			// ordinal position.
 			if ( pane.BarType == BarType.SortedOverlay )
 			{
 				// First, create a new curveList with references (not clones) of the curves
@@ -554,12 +542,9 @@ namespace ZedGraph
 					if ( curve.IsBar )
 						tempList.Add( (CurveItem) curve );
 				
-				// Loop through the bars, graphing each ordinal position separately
 				for ( int i=0; i<this.maxPts; i++ )
 				{
-					// At each ordinal position, sort the curves according to the value axis value
 					tempList.Sort( pane.BarBase == BarBase.X ? SortType.YValues : SortType.XValues, i );
-					// plot the bars for the current ordinal position, in sorted order
 					foreach ( BarItem barItem in tempList )
 						barItem.Bar.DrawSingleBar( g, pane, barItem,
 							((BarItem)barItem).BaseAxis(pane),
@@ -568,9 +553,7 @@ namespace ZedGraph
 				}
 			}
 
-			// Loop for each curve in reverse order to pick up the remaining curves
-			// The reverse order is done so that curves that are later in the list are plotted behind
-			// curves that are earlier in the list
+			//	Loop for each curve in reverse order to pick up the remaining bartypes
 			for ( int i=this.Count-1; i>=0; i-- )
 			{
 				CurveItem curve = this[i];
@@ -579,24 +562,9 @@ namespace ZedGraph
 					pos--;
 					
 				// Render the curve
-
 				//	if	it's a bar type or a sorted overlay or a percentstacked bar, it's already been	done above
-				if	( !(pane.BarType == BarType.SortedOverlay) || !curve.IsBar ||!curve.IsPie ) 
+				if	( !(pane.BarType == BarType.SortedOverlay) || !curve.IsBar  ) 
 					curve.Draw( g, pane, pos, scaleFactor );
-
-				if ( curve.IsPie )
-					if (this.NumPies == 1 )
-				{
-					((PieItem)curve).Draw (g, pane, pos, scaleFactor ) ;				  //one pie, use entire AxisRect
-					}
-				else
-				{
-/*
-					RectangleF rect =  pane.MiniPanes[0];
-					rect.X += 5 ;
-*/
-				}
-
 			}
 		}
 	#endregion

@@ -9,16 +9,10 @@ using System.Drawing.Imaging;
 using System.Drawing.Printing;
 using System.Drawing.Text;
 using System.Data;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Runtime.Serialization.Formatters.Soap;
-using System.Xml;
-using System.Xml.Serialization;
-using System.IO;
 using GDIDB;
 using ZedGraph;
-using System.Diagnostics;
 
-namespace ZedGraph.Demo
+namespace ZedGraphTest
 {
 	/// <summary>
 	/// Summary description for Form1.
@@ -121,30 +115,22 @@ namespace ZedGraph.Demo
 		private bool isResizable = true;
 		double[] gx = new double[20];
 		double[] gy = new double[20];
+		//		int	nPts = 20;
 
 		private void Form1_Load(object sender, System.EventArgs e)
 		{			
-			Trace.Listeners.Add(new TextWriterTraceListener( @"myTrace.txt" ) );
-			Trace.AutoFlush = true;
-
 			memGraphics.CreateDoubleBuffer(this.CreateGraphics(),
 				this.ClientRectangle.Width, this.ClientRectangle.Height);
 
+			//myPane = new GraphPane( new Rectangle( 10, 10, 10, 10 ),
+			//	"Wacky Widget Company\nProduction Report",
+			//	"Time, Days\n(Since Plant Construction Startup)",
+			//	"Widget Production\n(units/hour)" );
+			//myPane.AxisBackColor = Color.LightGoldenrodYellow;
 
-#if false	// serialized data
-
-			SoapFormatter mySerializer = new SoapFormatter();
-			Stream myReader = new FileStream( "myFileName.soap", FileMode.Open,
-						FileAccess.Read, FileShare.Read );
-
-			//BinaryFormatter mySerializer = new BinaryFormatter();
-			//Stream myReader = new FileStream( "c:\\temp\\myFileName.bin", FileMode.Open,
-			//			FileAccess.Read, FileShare.Read );
-
-			myPane = (GraphPane) mySerializer.Deserialize( myReader );
-			myReader.Close();
-
-#endif
+			// Create a new graph with topLeft at (40,40) and size 600x400
+			//myPane = new GraphPane( new Rectangle( 40, 40, 600, 400 ),
+			//	"My Test Text Graph", "Label", "My Y Axis" );
 
 #if true	// The main example
 
@@ -153,8 +139,6 @@ namespace ZedGraph.Demo
 				"Time, Days\n(Since Plant Construction Startup)",
 				"Widget Production\n(units/hour)" );
 			SetSize();
-
-			//myPane.XAxis.ScaleFontSpec.Size = 8;
 
 			double[] x = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
 			double[] y = { 20, 10, 50, 25, 35, 75, 90, 40, 33, 50 };
@@ -167,22 +151,13 @@ namespace ZedGraph.Demo
 			curve.Symbol.Fill = new Fill( Color.White );
 			curve.Symbol.Size = 10;
 			
-			//MessageBox.Show( curve.Points.InterpolateX( 450 ).ToString() );
-
 			double[] x3 = { 150, 250, 400, 520, 780, 940 };
 			double[] y3 = { 5.2, 49.0, 33.8, 88.57, 99.9, 36.8 };
 			curve = myPane.AddCurve( "Moe", x3, y3, Color.FromArgb( 200, 55, 135), SymbolType.Triangle );
 			curve.Line.Width = 1.5F;
 			//curve.Line.IsSmooth = true;
 			curve.Symbol.Fill = new Fill( Color.White );
-			
-			Bitmap bm = new Bitmap( @"c:\windows\winnt256.bmp" );
-			Image image = Image.FromHbitmap( bm.GetHbitmap() );
-			//TextureBrush tBrush = new TextureBrush( image, WrapMode.Tile );
-			//LinearGradientBrush tBrush = new LinearGradientBrush( new Rectangle(0, 0, 100, 100), Color.Blue, Color.Red, 45.0F );
-			//curve.Line.Fill = new Fill( tBrush );
-			curve.Line.Fill = new Fill(image, WrapMode.Tile );
-			//curve.Line.Fill = new Fill( Color.White, Color.FromArgb( 160, 230, 145, 205), 90F );
+			curve.Line.Fill = new Fill( Color.White, Color.FromArgb( 160, 230, 145, 205), 90F );
 			curve.Symbol.Size = 10;
 			
 			double[] x4 = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
@@ -208,8 +183,6 @@ namespace ZedGraph.Demo
 			//brush = new PathGradientBrush( path );
 			//bar.Bar.Fill = new Fill( brush );
 			
-			//PointPairList junk = new PointPairList();
-			//myPane.AddCurve( "Hi There", junk, Color.Blue, SymbolType.None );
 			
 			myPane.PaneFill = new Fill( Color.WhiteSmoke, Color.Lavender, 0F );
 			
@@ -217,7 +190,6 @@ namespace ZedGraph.Demo
 						Color.FromArgb( 255, 255, 190), 90F );
 			
 			myPane.XAxis.IsShowGrid = true;
-			myPane.XAxis.Max = 1200;
 			//myPane.IsPenWidthScaled = false;
 			//myPane.XAxis.ScaleFontSpec.Angle = 90;
 			//myPane.XAxis.ScaleAlign = AlignP.Inside;
@@ -227,8 +199,7 @@ namespace ZedGraph.Demo
 			myPane.YAxis.IsShowGrid = true;
 			//myPane.YAxis.ScaleFontSpec.Angle = 90;
 			myPane.YAxis.Max = 120;
-			//myPane.YAxis.ScaleAlign = AlignP.Inside;
-			//myPane.YAxis.ScaleFontSpec.Border.IsVisible = true;
+			//myPane.YAxis.ScaleAlign = AlignP.Center;
 			//myPane.YAxis.Type = AxisType.Log;
 			//myPane.YAxis.IsUseTenPower = false;
 			//myPane.YAxis.IsShowMinorGrid = true;
@@ -242,7 +213,6 @@ namespace ZedGraph.Demo
 			text.Location.AlignH = AlignH.Center;
 			text.Location.AlignV = AlignV.Bottom;
 			text.FontSpec.Fill = new Fill( Color.White, Color.PowderBlue, 45F );
-			text.FontSpec.StringAlignment = StringAlignment.Near;
 			myPane.GraphItemList.Add( text );
 
 			ArrowItem arrow = new ArrowItem( Color.Black, 12F, 175F, 77F, 100F, 45F );
@@ -292,25 +262,22 @@ namespace ZedGraph.Demo
 			box.ZOrder = ZOrder.E_BehindAxis;
 			myPane.GraphItemList.Add( box );
 			
-			TextItem myText = new TextItem( "Peak Range", 1170, 105 );
-			myText.Location.CoordinateFrame = CoordType.AxisXYScale;
-			myText.Location.AlignH = AlignH.Right;
-			myText.Location.AlignV = AlignV.Center;
-			myText.FontSpec.IsItalic = true;
-			myText.FontSpec.IsBold = false;
-			myText.FontSpec.Fill.IsVisible = false;
-			myText.FontSpec.Border.IsVisible = false;
-			myPane.GraphItemList.Add( myText );
-			
-			
-			//myPane.LineType = LineType.Stack;
+			text = new TextItem( "Peak Range", 1170, 105 );
+			text.Location.CoordinateFrame = CoordType.AxisXYScale;
+			text.Location.AlignH = AlignH.Right;
+			text.Location.AlignV = AlignV.Center;
+			text.FontSpec.IsItalic = true;
+			text.FontSpec.IsBold = false;
+			text.FontSpec.Fill.IsVisible = false;
+			text.FontSpec.Border.IsVisible = false;
+			myPane.GraphItemList.Add( text );
 			//myPane.PaneBorder.IsVisible= false;
 
-			RectangleF rect = new RectangleF( .5F, .2F, .2F, .2F );
-			EllipseItem ellipse = new EllipseItem( rect, Color.Black, Color.Blue );
-			ellipse.Location.CoordinateFrame = CoordType.PaneFraction;
-			ellipse.ZOrder = ZOrder.D_BehindCurves;
-			myPane.GraphItemList.Add( ellipse );
+//			RectangleF rect = new RectangleF( .5F, .2F, .2F, .2F );
+//			EllipseItem ellipse = new EllipseItem( rect, Color.Black, Color.Blue );
+//			ellipse.Location.CoordinateFrame = CoordType.PaneFraction;
+//			ellipse.ZOrder = ZOrder.G_BehindAll;
+//			myPane.GraphItemList.Add( ellipse );
 
 			//myPane.CurveList.Remove( myPane.CurveList.IndexOf( bar ) );
 
@@ -326,252 +293,6 @@ namespace ZedGraph.Demo
 			myPane.GraphItemList.Add( imageItem );
 			*/
 
-#endif
-
-#if false	//Pie Chart Example   
-			// Create a new graph with topLeft at (40,40) and size 600x400
-			myPane = new GraphPane( new Rectangle( 40, 40, 600, 400 ),
-				"2003 Regional Sales", "", "" );
-
-			myPane.PaneFill = new Fill( Color.Cornsilk );
-			myPane.AxisFill = new Fill( Color.Cornsilk );
-			myPane.Legend.Position = LegendPos.Right ;
-			
-			double [] values =   { 25, 15, 40, 20 } ;
-			double [] values2 =   { 250, 50, 400, 200,50 } ;
-			Color [] colors = { Color.Red, Color.Blue, Color.Green, Color.Yellow } ;
-			double [] displacement = {	 .0,.10,.0,.20 } ;
-			string [] labels = { "East", "West", "Central", "Canada" } ;
-
-
-/*
-			PieItem myPie = myPane.AddPie ("2001",5) ;
-			myPie.ChangeSliceValues (values2) ;
-			((PieSlice)myPie.SliceList[4]).Displacement =2.1 ;							//wll be reset internally to 1.0
-			myPie.ChangeSliceValue (4, 200 );							
-*/
-
-
-			
-			//			myPie.PieType = PieType.Pie3D ;
-
-
-			PieItem myPie1 = myPane.AddPie ( "2002", values, colors, displacement, labels ) ;
-			myPie1.AddSlice	( values[0], Color.Coral, displacement[2], "SE" );
-			myPie1.AddSlice	( 10, Color.Coral, 0 , "x" );
-			myPie1.AddSlice	( 10, Color.Coral, 0 , "x" );
-			myPie1.AddSlice	( 10, Color.Coral, 0 , "x" );
-			myPie1.AddSlice	( 10, Color.Coral, 0 , "x" );
-			myPie1.AddSlice	( 10, Color.Coral, 0 , "x" );
-			myPie1.AddSlice	( 10, Color.Coral, 0 , "x" );
-			((PieSlice)myPie1.SliceList[3]).Border.Color = Color.Blue ;
-			((PieSlice)myPie1.SliceList[3]).Border.PenWidth = 2 ;
-			((PieSlice)myPie1.SliceList[2]).Fill = new Fill( Color.Red, Color.White, 45F );
-			
-			myPie1.IsVisible = false;
-			myPie1.Label = "JUnk";
-			myPie1.Color = Color.Red;
-			//MessageBox.Show( "Start" );
-			//for ( int i=0; i<10000000; i++ )
-			//	myPie1.RecalculateSliceAngles();
-			//MessageBox.Show( "Done" );
-
-//			((PieSlice)myPie1.SliceList[1]).Border.IsVisible = false ;
-//			((PieSlice)myPie1.SliceList[4]).IsVisible = false ;
-         
-													//generate defaults
-//				PieItem myPie3 = myPane.AddPie ( "2002", null, null, null, null) ;
-													//generate defaults except for values
-//				PieItem myPie2 = myPane.AddPie ( "2003", values) ;
-
-
-	//		myPane.IsAxisRectAuto = false ;
-																																						
-			 
-
-#endif
-
-#if false	// Test Line Stacking
-
-            myPane = new GraphPane( new Rectangle( 10, 10, 10, 10 ),
-				"Wacky Widget Company\nProduction Report",
-				"Time, Days\n(Since Plant Construction Startup)",
-				"Widget Production\n(units/hour)" );
-			SetSize();
-
-			double[] x = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-			double[] y = { 20, 10, 50, 25, 35, 75, 90, 40, 33, 50 };
-			LineItem curve;
-			curve = myPane.AddCurve( "Larry", x, y, Color.Green, SymbolType.Circle );
-			curve.Line.Width = 1.5F;
-			curve.Line.Fill = new Fill( Color.White, Color.FromArgb( 60, 190, 50), 90F );
-			curve.Line.IsSmooth = true;
-			curve.Line.SmoothTension = 0.6F;
-			curve.Symbol.Fill = new Fill( Color.White );
-			curve.Symbol.Size = 10;
-			curve.Line.Fill.IsVisible = false;
-			
-			double[] y3 = { 5.2, 49.0, 33.8, 88.57, 99.9, 36.8, 22.1, 34.3, 10.4, 17.5 };
-			curve = myPane.AddCurve( "Moe", x, y3, Color.FromArgb( 200, 55, 135), SymbolType.Triangle );
-			curve.Line.Width = 1.5F;
-			//curve.Line.IsSmooth = true;
-			curve.Symbol.Fill = new Fill( Color.White );
-			curve.Line.Fill = new Fill( Color.White, Color.FromArgb( 160, 230, 145, 205), 90F );
-			curve.Symbol.Size = 10;
-			
-			myPane.PaneFill = new Fill( Color.WhiteSmoke, Color.Lavender, 0F );
-			
-			myPane.AxisFill = new Fill( Color.FromArgb( 255, 255, 245),
-						Color.FromArgb( 255, 255, 190), 90F );
-			
-			myPane.XAxis.IsShowGrid = true;
-
-			myPane.YAxis.IsShowGrid = true;
-			//myPane.YAxis.Max = 120;									
-			
-			myPane.LineType = LineType.Stack;
-#endif
-
-#if false	// The transparent example
-
-            myPane = new GraphPane( new Rectangle( 10, 10, 10, 10 ),
-				"Desert Rainfall",
-				"Time, Years",
-				"Rainfall, mm/yr" );
-			SetSize();
-			
-			double[] x4 = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-			double[] y4 = { 30, 45, 53, 60, 75, 83, 84, 79, 71, 57 };
-			BarItem bar = myPane.AddBar( "Wheezy", x4, y4, Color.SteelBlue );
-			//bar.Bar.Fill = new Fill( Color.RosyBrown, Color.White, Color.RosyBrown );
-			bar.Bar.Fill = new Fill( Color.FromArgb( 100, 130, 255, 130 ), Color.FromArgb( 100, 255, 255, 255 ),
-								Color.FromArgb( 100, 130, 255, 130 ) );
-			myPane.ClusterScaleWidth = 100;
-			myPane.BarType = BarType.Stack;
-			//myPane.PaneGap = 60F;
-			//curve.Bar.Fill = new Fill( Color.Blue );
-			//curve.Symbol.Size = 12;
-
-			double[] x2 = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-			double[] y2 = { 10, 15, 17, 20, 25, 27, 29, 26, 24, 18 };
-			bar = myPane.AddBar( "Curly", x2, y2, Color.RoyalBlue );
-			bar.Bar.Fill = new Fill( Color.RoyalBlue, Color.White, Color.RoyalBlue );
-			myPane.ClusterScaleWidth = 100;
-			//Brush brush = new HatchBrush( HatchStyle.Cross, Color.AliceBlue, Color.Red );
-			//GraphicsPath path = new GraphicsPath();
-			//path.AddLine( 10, 10, 20, 20 );
-			//path.AddLine( 20, 20, 30, 0 );
-			//path.AddLine( 30, 0, 10, 10 );
-			
-			//brush = new PathGradientBrush( path );
-			//bar.Bar.Fill = new Fill( brush );
-			
-			
-			//Bitmap bm = new Bitmap( @"c:\windows\winnt256.bmp" );
-			Bitmap bm = new Bitmap( @"c:\mypic.jpg" );
-			//Image image = Image.FromHbitmap( bm.GetHbitmap() );
-			
-			TextureBrush texBrush = new TextureBrush( bm );
-			myPane.PaneFill = new Fill( texBrush );
-			//myPane.PaneFill = new Fill( Color.WhiteSmoke, Color.Lavender, 0F );
-			
-			//myPane.AxisFill = new Fill( Color.FromArgb( 255, 255, 245),
-			//			Color.FromArgb( 255, 255, 190), 90F );
-			myPane.AxisFill.IsVisible = false;
-			myPane.Legend.IsVisible = false;
-			
-			TextItem text = new TextItem( "Desert Rainfall", 0.5F, -0.05F, CoordType.AxisFraction,
-					AlignH.Center, AlignV.Bottom );
-			text.FontSpec.FontColor = Color.Black;
-			text.FontSpec.Size = 20F;
-			text.FontSpec.IsBold = true;
-			text.FontSpec.IsItalic = true;
-			text.FontSpec.Fill.IsVisible = false;
-			text.FontSpec.Border.IsVisible = false;
-			myPane.GraphItemList.Add( text );
-			myPane.IsShowTitle = false;
-			myPane.FontSpec.FontColor = Color.Black;
-			myPane.XAxis.Color = Color.White;
-			myPane.YAxis.Color = Color.White;
-			myPane.XAxis.ScaleFontSpec.FontColor = Color.White;
-			myPane.XAxis.TitleFontSpec.FontColor = Color.White;
-			myPane.YAxis.ScaleFontSpec.FontColor = Color.White;
-			myPane.YAxis.TitleFontSpec.FontColor = Color.White;
-			myPane.AxisBorder.Color = Color.White;
-			myPane.XAxis.GridColor = Color.White;
-			myPane.YAxis.GridColor = Color.White;
-			
-			myPane.XAxis.IsShowGrid = true;
-			//myPane.IsPenWidthScaled = false;
-			//myPane.XAxis.ScaleFontSpec.Angle = 90;
-			//myPane.XAxis.ScaleAlign = AlignP.Inside;
-			//myPane.XAxis.IsShowMinorGrid = true;
-			//myPane.XAxis.MinorGridColor = Color.Red;
-
-			myPane.YAxis.IsShowGrid = true;
-			//myPane.YAxis.ScaleFontSpec.Angle = 90;
-			myPane.YAxis.Max = 120;
-			//myPane.YAxis.ScaleAlign = AlignP.Center;
-			//myPane.YAxis.Type = AxisType.Log;
-			//myPane.YAxis.IsUseTenPower = false;
-			//myPane.YAxis.IsShowMinorGrid = true;
-			//myPane.YAxis.MinorGridColor = Color.Red;
-
-			//myPane.Y2Axis.IsVisible = true;
-			//myPane.Y2Axis.Max = 120;
-			//myPane.Y2Axis.ScaleAlign = AlignP.Outside;
-			
-			myPane.AxisChange( this.CreateGraphics() );
-			RectangleF axisRect = myPane.AxisRect;
-			//axisRect.X += axisRect.Width * 0.3F;
-			//axisRect.Width *= 0.7F;
-			axisRect.Y += axisRect.Height * 0.35F;
-			axisRect.Height *= 0.65F;
-			myPane.AxisRect = axisRect;
-
-#endif
-
-#if false	// Test Line Stacking
-
-            myPane = new GraphPane( new Rectangle( 10, 10, 10, 10 ),
-				"Wacky Widget Company\nProduction Report",
-				"Time, Days\n(Since Plant Construction Startup)",
-				"Widget Production\n(units/hour)" );
-			SetSize();
-
-			double[] x = { 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 };
-			double[] y = { 20, 10, 50, 25, 35, 75, 90, 40, 33, 50 };
-			//double[] y = { -20, -10, -50, -25, -35, -75, -90, -40, -33, -50 };
-			LineItem curve;
-			curve = myPane.AddCurve( "Larry", x, y, Color.Green, SymbolType.Circle );
-			curve.Line.Width = 1.5F;
-			curve.Line.Fill = new Fill( Color.White, Color.FromArgb( 60, 190, 50), 90F );
-			curve.Line.IsSmooth = true;
-			curve.Line.SmoothTension = 0.6F;
-			curve.Symbol.Fill = new Fill( Color.White );
-			curve.Symbol.Size = 10;
-			curve.Line.Fill.IsVisible = false;
-			
-			double[] y3 = { 5.2, 49.0, 33.8, 88.57, 99.9, 36.8, 22.1, 34.3, 10.4, 17.5 };
-			//double[] y3 = { -5.2, -49.0, -33.8, -88.57, -99.9, -36.8, -22.1, -34.3, -10.4, -17.5 };
-			curve = myPane.AddCurve( "Moe", x, y3, Color.FromArgb( 200, 55, 135), SymbolType.Triangle );
-			curve.Line.Width = 1.5F;
-			//curve.Line.IsSmooth = true;
-			curve.Symbol.Fill = new Fill( Color.White );
-			curve.Line.Fill = new Fill( Color.White, Color.FromArgb( 160, 230, 145, 205), 90F );
-			curve.Symbol.Size = 10;
-			
-			myPane.PaneFill = new Fill( Color.WhiteSmoke, Color.Lavender, 0F );
-			
-			myPane.AxisFill = new Fill( Color.FromArgb( 255, 255, 245),
-						Color.FromArgb( 255, 255, 190), 90F );
-			
-			myPane.XAxis.IsShowGrid = true;
-
-			myPane.YAxis.IsShowGrid = true;
-			//myPane.YAxis.Max = 120;									
-			
-			myPane.LineType = LineType.Stack;
 #endif
 
 #if false	// The transparent example
@@ -1074,33 +795,16 @@ namespace ZedGraph.Demo
 				"My X Axis",
 				"My Y Axis" );
 			// Make up some random data points
-			//double[] x = { 0.2, 2, 20, 80, 150, 400, 700, 800, 900, 1000 };
-			//double[] y = { 20, 10, 50, 40, 35, 60, 90, 25, 48, 75 };
-
-			double[] x = { 0.1, 0.25, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9 };
-			double[] y = { 0.2, 0.088, 0.2, 0.9, 0.2, 0.34, 0.2, 0.2 };
+			double[] x = { 0.2, 2, 20, 80, 150, 400, 700, 800, 900, 1000 };
+			double[] y = { 20, 10, 50, 40, 35, 60, 90, 25, 48, 75 };
 			string[] labels = { "point\none", "two", "point\nthree", "four", "5", "6", "Point\n7", "8", "9", "Point\nten" };
 			// Generate a red curve with diamond
 			// symbols, and "My Curve" in the legend
-			LineItem myCurve = myPane.AddCurve( "My Curve",
+			CurveItem myCurve = myPane.AddCurve( "My Curve",
 				x, y, Color.Red, SymbolType.Diamond );
 
-<<<<<<< Form1.cs
-			myCurve.IsVisible = false;
-			
-			//myPane.YAxis.Min = 100;
-			//myPane.YAxis.Max = 150;
-=======
-			myCurve.Line.IsSmooth = true;
-			myCurve.Line.SmoothTension = 0.5F;
-
-			myPane.YAxis.Min = -0.1;
-
-			MessageBox.Show( myCurve.Points.SplineInterpolateX( 0.652, 0.5 ).ToString() );
-			
-			//myPane.YAxis.Min = 100;
-			//myPane.YAxis.Max = 150;
->>>>>>> 3.39
+			myPane.YAxis.Min = 100;
+			myPane.YAxis.Max = 150;
 			// Tell ZedGraph to refigure the
 			// axes since the data have changed
 			//myPane.AxisChange( CreateGraphics() );
@@ -1639,10 +1343,7 @@ namespace ZedGraph.Demo
 
 			// Make up some random data points
 			string[] labels = { "USA", "Spain", "Qatar", "Morocco", "UK", "Uganda",
-								  "Cambodia", "Malaysia", "Australia", "Ecuador",
-								"UAE", "Kuwait", "Iraq", "Iran", "Italy", "Turkey", "Russia",
-								"Ukraine", "Venezuela", "Bolivia", "Colombia", "Peru",
-								"Oman", "Saudi Arabia" };
+								  "Cambodia", "Malaysia", "Australia", "Ecuador" };
 //			double[] y = new double[10];
 //			for ( int i=0; i<10; i++ )
 //				y[i] = Math.Sin( (double) i * Math.PI / 2.0 );
@@ -1730,7 +1431,7 @@ namespace ZedGraph.Demo
 
 #endif
 
-#if false	// HiLoClose Example
+#if false	//HiLoClose Example
 			// Create a new graph with topLeft at (40,40) and size 600x400
 			myPane = new GraphPane( new Rectangle( 40, 40, 600, 400 ),
 				"Hi-Low-Close Chart",
@@ -1997,7 +1698,7 @@ namespace ZedGraph.Demo
 			//			GraphPane testPane = (GraphPane) myPane.Clone();
 #endif
 
-#if false	// The sorted overlay bar graph sample
+#if false // The sorted overlay bar graph sample
 			// Create a new graph with topLeft at (40,40) and size 600x400
 			myPane = new GraphPane( new Rectangle( 40, 40, 600, 400 ),
 				"My Test Overlay Bar Graph", "Label", "My Y Axis" );
@@ -2619,7 +2320,7 @@ namespace ZedGraph.Demo
 
 #endif
 
-#if false	// Will's Test
+#if false  // Will's Test
 			// Create a new graph
 			myPane = new GraphPane( new Rectangle( 40, 40, 300, 200 ),
 				"My Pane",
@@ -2737,92 +2438,6 @@ namespace ZedGraph.Demo
 
 #endif
 
-#if false	// Nick Sutterton's test
-			/////////////////////////////
-			//
-			// MAKE THE GRAPH
-			//
-			/////////////////////////////
-			
-			MessageBox.Show( "Start" );
-			// Hardcoded Data
-			double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
-							16, 17, 18, 19, 20, 21, 22, 23, 24};
-			double[] y = { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000,
-							9000, 10000, 11000, 12000, 13000, 14000, 15000,
-							16000, 17000, 18000, 19000, 
-							20000, 21000, 22000, 23000, 24000};
-			double YMin = 1000;
-			double YMax = 24000;
-			
-			GraphPane pane;
-			myPane = new GraphPane( new Rectangle( 0, 0, 400, 200 ),
-									"Test",
-									"",
-									"" );
-			pane = myPane;
-
-			
-			// SET UP VIEWING PROPERTIES
-			
-			//pane.XAxis.Type = AxisType.Date;
-			
-			// VISIBILITY
-			pane.Legend.IsVisible = false;
-			pane.XAxis.IsShowGrid = true;
-			pane.YAxis.IsShowGrid = true;
-			pane.XAxis.IsVisible = true;
-			pane.YAxis.IsVisible = true;
-			
-			// FORMAT
-			pane.ClusterScaleWidth = 45;
-			pane.PaneGap = 10;
-			pane.MinBarGap = (float) 0.05;
-			pane.FontSpec.Size = 25;
-			pane.XAxis.ScaleFormat = "MMM-yy";
-			pane.XAxis.ScaleFontSpec.Size = 20;
-			pane.YAxis.ScaleFontSpec.Size = 20;
-			pane.XAxis.TitleFontSpec.Size = 20;
-			pane.YAxis.TitleFontSpec.Size = 20;
-			
-			// SCALE
-			pane.XAxis.Step = 3;
-			pane.XAxis.MajorUnit = DateUnit.Month;
-			pane.XAxis.MinorStep = 1;
-			pane.XAxis.MinorUnit = DateUnit.Month;
-			
-			pane.YAxis.Min = YMin - YMin*0.025;
-			pane.YAxis.Max = YMax + YMax*0.025;
-			pane.XAxis.Min = 1;
-			pane.XAxis.Max = 24;
-			
-			// COLOR
-			BarItem bar = pane.AddBar( "Test", x, y, Color.Black );
-			bar.Bar.Fill = new Fill( Color.SeaGreen, Color.MediumAquamarine, Color.SeaGreen);
-			pane.PaneFill = new Fill( Color.Lavender, Color.Lavender, 0F );
-			pane.AxisFill = new Fill( Color.FromArgb( 255, 255, 245),
-			Color.FromArgb( 255, 255, 190), 90F );
-			
-			
-			///////////////////////
-			//
-			// SAVE THE GRAPH IMAGE
-			//
-			///////////////////////
-			
-			myPane.AxisChange( this.CreateGraphics() );
-			//System.Drawing.Graphics img = Graphics.FromImage( bmp );
-			//img.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-			//pane.AxisChange( img );
-			//pane.Draw( img );
-			Bitmap bmp = pane.Image;
-			//Response.ContentType = "image/jpeg";
-			//bmp.Save( Response.OutputStream, ImageFormat.Jpeg );
-			//img.Dispose();
-			//bmp.Dispose();
-
-			MessageBox.Show( "Done" );
-#endif
 			SetSize();
 
 			//			RectangleF myRect = myPane.CalcAxisRect( memGraphics.g );
@@ -3069,67 +2684,14 @@ namespace ZedGraph.Demo
 		}
 #endif
 
-		private void Serialize( GraphPane myPane )
-		{
-			XmlSerializer mySerializer = new XmlSerializer( typeof( GraphPane ) );
-			StreamWriter myWriter = new StreamWriter( @"myFileName.xml" );
-
-			//SoapFormatter mySerializer = new SoapFormatter();
-			//FileStream myWriter = new FileStream( @"myFileName.soap", FileMode.Create );
-
-			//BinaryFormatter mySerializer = new BinaryFormatter();
-			//Stream myWriter = new FileStream( "c:\\temp\\myFileName.bin", FileMode.Create,
-			//			FileAccess.Write, FileShare.None );
-
-			mySerializer.Serialize( myWriter, myPane );
-
-			MessageBox.Show( "Serialized output created" );
-
-			myWriter.Close();
-		}
-
-
-		private void DeSerialize( out GraphPane myPane )
-		{
-			BinaryFormatter mySerializer = new BinaryFormatter();
-			Stream myReader = new FileStream( "c:\\temp\\myFileName.bin", FileMode.Open,
-						FileAccess.Read, FileShare.Read );
-
-			myPane = (GraphPane) mySerializer.Deserialize( myReader );
-			Invalidate();
-
-			myReader.Close();
-		}
-
 #if true
 		private void Form1_MouseDown( object sender, System.Windows.Forms.MouseEventArgs e )
 		{
-			Serialize( myPane );
-			//DeSerialize( out myPane );
-
-			//myPane.XAxis.PickScale( 250, 900, myPane, this.CreateGraphics(), myPane.CalcScaleFactor() );
-			//Invalidate();
-			
 			//showTicks = true;
 			//Invalidate();
-/*			
-			if ( myText != null )
-			{
-				CurveItem curve;
-				int		iPt;
-				if ( myPane.FindNearestPoint( new PointF( e.X, e.Y ), out curve, out iPt ) )
-					myText.Text = String.Format( "label = {0}  X = {1}",
-						curve.Label, curve.Points[iPt].ToString("e2") );
-				else
-					myText.Text = "none";
-				
-				if ( curve is LineItem )
-					((LineItem) curve).Line.IsVisible = false;
-				Invalidate();
-			}
-*/
+
 			//DoPrint();
-			//CopyToPNG( myPane );
+			CopyToPNG( myPane );
 			
 			//Bitmap image = myPane.ScaledImage( 3000, 2400, 600 );
 			//image.Save( @"c:\zedgraph.jpg", ImageFormat.Jpeg );

@@ -20,8 +20,6 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -35,9 +33,8 @@ namespace ZedGraph
 	/// </remarks>
 	/// 
 	/// <author> John Champion modified by Jerry Vos </author>
-	/// <version> $Revision: 3.15 $ $Date: 2005-01-08 08:28:06 $ </version>
-	[Serializable]
-	abstract public class Axis : ISerializable
+	/// <version> $Revision: 3.13.2.1 $ $Date: 2005-01-16 04:11:46 $ </version>
+	abstract public class Axis
 	{
 	#region Class Fields
 		/// <summary> Private fields for the <see cref="Axis"/> scale definitions.
@@ -161,17 +158,6 @@ namespace ZedGraph
 						minorGridColor;
 		
 		/// <summary>
-		/// Private fields for Unit types to be used for the major and minor tics.
-		/// See <see cref="MajorUnit"/> and <see cref="MinorUnit"/> for the corresponding
-		/// public properties.
-		/// These types only apply for date-time scales (<see cref="IsDate"/>).
-		/// </summary>
-		/// <value>The value of these types is of enumeration type <see cref="DateUnit"/>
-		/// </value>
-		private DateUnit	majorUnit,
-							minorUnit;
-
-		/// <summary>
 		/// Scale values for calculating transforms.  These are temporary values
 		/// used only during the Draw process.
 		/// </summary>
@@ -202,6 +188,16 @@ namespace ZedGraph
 		private double	minScale,
 						maxScale;
 		
+		/// <summary>
+		/// Private fields for Unit types to be used for the major and minor tics.
+		/// See <see cref="MajorUnit"/> and <see cref="MinorUnit"/> for the corresponding
+		/// public properties.
+		/// These types only apply for date-time scales (<see cref="IsDate"/>).
+		/// </summary>
+		/// <value>The value of these types is of enumeration type <see cref="DateUnit"/>
+		/// </value>
+		private DateUnit	majorUnit,
+							minorUnit;
 	#endregion
 
 	#region Defaults
@@ -936,160 +932,6 @@ namespace ZedGraph
 			gridColor = rhs.GridColor;
 			minorGridColor = rhs.MinorGridColor;
 		} 
-	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected Axis( SerializationInfo info, StreamingContext context )
-		{
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			min = info.GetDouble( "min" );
-			max = info.GetDouble( "max" );
-			step = info.GetDouble( "step" );
-			minorStep = info.GetDouble( "minorStep" );
-
-			minAuto = info.GetBoolean( "minAuto" );
-			maxAuto = info.GetBoolean( "maxAuto" );
-			stepAuto = info.GetBoolean( "stepAuto" );
-			minorStepAuto = info.GetBoolean( "minorStepAuto" );
-			numDecAuto = info.GetBoolean( "numDecAuto" );
-			scaleMagAuto = info.GetBoolean( "scaleMagAuto" );
-			scaleFormatAuto = info.GetBoolean( "scaleFormatAuto" );
-			
-			minGrace = info.GetDouble( "minGrace" );
-			maxGrace = info.GetDouble( "maxGrace" );
-
-			numDec = info.GetInt32( "numDec" );
-			scaleMag = info.GetInt32( "scaleMag" );
-
-			isVisible = info.GetBoolean( "isVisible" );
-			isShowGrid = info.GetBoolean( "isShowGrid" );
-			isShowTitle = info.GetBoolean( "isShowTitle" );
-			isZeroLine = info.GetBoolean( "isZeroLine" );
-			isTic = info.GetBoolean( "isTic" );
-			isInsideTic = info.GetBoolean( "isInsideTic" );
-			isOppositeTic = info.GetBoolean( "isOppositeTic" );
-			isMinorTic = info.GetBoolean( "isMinorTic" );
-			isShowMinorGrid = info.GetBoolean( "isShowMinorGrid" );
-			isMinorInsideTic = info.GetBoolean( "isMinorInsideTic" );
-			isMinorOppositeTic = info.GetBoolean( "isMinorOppositeTic" );
-			isTicsBetweenLabels = info.GetBoolean( "isTicsBetweenLabels" );
-			isReverse = info.GetBoolean( "isReverse" );
-			isOmitMag = info.GetBoolean( "isOmitMag" );
-			isUseTenPower = info.GetBoolean( "isUseTenPower" );
-
-			type = (AxisType) info.GetValue( "type", typeof(AxisType) );
-			title = info.GetString( "title" );
-			scaleFormat = info.GetString( "scaleFormat" );
-
-			scaleAlign = (AlignP) info.GetValue( "scaleAlign", typeof(AlignP) );
-			textLabels = (string[]) info.GetValue( "textLabels", typeof(string[]) );
-
-			titleFontSpec = (FontSpec) info.GetValue( "titleFontSpec", typeof(FontSpec) );
-			scaleFontSpec = (FontSpec) info.GetValue( "scaleFontSpec", typeof(FontSpec) );
-
-			ticPenWidth = info.GetSingle( "ticPenWidth" );
-			ticSize = info.GetSingle( "ticSize" );
-			minorTicSize = info.GetSingle( "minorTicSize" );
-			gridDashOn = info.GetSingle( "gridDashOn" );
-			gridDashOff = info.GetSingle( "gridDashOff" );
-			gridPenWidth = info.GetSingle( "gridPenWidth" );
-			minorGridDashOn = info.GetSingle( "minorGridDashOn" );
-			minorGridDashOff = info.GetSingle( "minorGridDashOff" );
-			minorGridPenWidth = info.GetSingle( "minorGridPenWidth" );
-			minSpace = info.GetSingle( "minSpace" );
-
-			color = (Color) info.GetValue( "color", typeof(Color) );
-			gridColor = (Color) info.GetValue( "gridColor", typeof(Color) );
-			minorGridColor = (Color) info.GetValue( "minorGridColor", typeof(Color) );
-
-			majorUnit = (DateUnit) info.GetValue( "majorUnit", typeof(DateUnit) );
-			minorUnit = (DateUnit) info.GetValue( "minorUnit", typeof(DateUnit) );
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-			info.AddValue( "schema", schema );
-			info.AddValue( "min", min );
-			info.AddValue( "max", max );
-			info.AddValue( "step", step );
-			info.AddValue( "minorStep", minorStep );
-
-			info.AddValue( "minAuto", minAuto );
-			info.AddValue( "maxAuto", maxAuto );
-			info.AddValue( "stepAuto", stepAuto );
-			info.AddValue( "minorStepAuto", minorStepAuto );
-			info.AddValue( "numDecAuto", numDecAuto );
-			info.AddValue( "scaleMagAuto", scaleMagAuto );
-			info.AddValue( "scaleFormatAuto", scaleFormatAuto );
-
-			info.AddValue( "minGrace", minGrace );
-			info.AddValue( "maxGrace", maxGrace );
-
-			info.AddValue( "numDec", numDec );
-			info.AddValue( "scaleMag", scaleMag );
-
-			info.AddValue( "isVisible", isVisible );
-			info.AddValue( "isShowGrid", isShowGrid );
-			info.AddValue( "isShowTitle", isShowTitle );
-			info.AddValue( "isZeroLine", isZeroLine );
-			info.AddValue( "isTic", isTic );
-			info.AddValue( "isInsideTic", isInsideTic );
-			info.AddValue( "isOppositeTic", isOppositeTic );
-			info.AddValue( "isMinorTic", isMinorTic );
-			info.AddValue( "isShowMinorGrid", isShowMinorGrid );
-			info.AddValue( "isMinorInsideTic", isMinorInsideTic );
-			info.AddValue( "isMinorOppositeTic", isMinorOppositeTic );
-			info.AddValue( "isTicsBetweenLabels", isTicsBetweenLabels );
-			info.AddValue( "isReverse", isReverse );
-			info.AddValue( "isOmitMag", isOmitMag );
-			info.AddValue( "isUseTenPower", isUseTenPower );
-
-			info.AddValue( "type", type );
-			info.AddValue( "title", title );
-			info.AddValue( "scaleFormat", scaleFormat );
-			info.AddValue( "scaleAlign", scaleAlign );
-			info.AddValue( "textLabels", textLabels );
-			info.AddValue( "titleFontSpec", titleFontSpec );
-			info.AddValue( "scaleFontSpec", scaleFontSpec );
-
-			info.AddValue( "ticPenWidth", ticPenWidth );
-			info.AddValue( "ticSize", ticSize );
-			info.AddValue( "minorTicSize", minorTicSize );
-			info.AddValue( "gridDashOn", gridDashOn );
-			info.AddValue( "gridDashOff", gridDashOff );
-			info.AddValue( "gridPenWidth", gridPenWidth );
-			info.AddValue( "minorGridDashOn", minorGridDashOn );
-			info.AddValue( "minorGridDashOff", minorGridDashOff );
-			info.AddValue( "minorGridPenWidth", minorGridPenWidth );
-			info.AddValue( "minSpace", minSpace );
-
-			info.AddValue( "color", color );
-			info.AddValue( "gridColor", gridColor );
-			info.AddValue( "minorGridColor", minorGridColor );
-
-			info.AddValue( "majorUnit", majorUnit );
-			info.AddValue( "minorUnit", minorUnit );
-		}
 	#endregion
 
 	#region Scale Properties
@@ -2332,7 +2174,7 @@ namespace ZedGraph
 				dVal = CalcMajorTicValue( startVal, i );
 
 				// draw the label
-				MakeLabel( pane, i, dVal, out tmpStr );
+				MakeLabel( i, dVal, out tmpStr );
 
 				SizeF sizeF;
 				if ( this.IsLog && this.isUseTenPower )
@@ -2703,7 +2545,15 @@ namespace ZedGraph
 				if ( this.isVisible )
 				{
 					// draw the label
-					MakeLabel( pane, i, dVal, out tmpStr );
+					MakeLabel( i, dVal, out tmpStr );
+					
+					if ( pane.BarType == BarType.PercentStack )															//rpk
+					{
+						if( this is YAxis && pane.BarBase == BarBase.X  )
+							tmpStr = tmpStr + "%" ;
+						if( this is XAxis && pane.BarBase == BarBase.Y )
+							tmpStr = tmpStr + "%" ;
+					}
 					
 					float height = ScaleFontSpec.BoundingBox( g, tmpStr, scaleFactor ).Height;
 					if ( this.ScaleAlign == AlignP.Center )
@@ -2916,10 +2766,6 @@ namespace ZedGraph
 		/// This method properly accounts for <see cref="IsLog"/>, <see cref="IsText"/>,
 		/// and other axis format settings.
 		/// </remarks>
-		/// <param name="pane">
-		/// A reference to the <see cref="GraphPane"/> object that is the parent or
-		/// owner of this object.
-		/// </param>
 		/// <param name="index">
 		/// The zero-based, ordinal index of the label to be generated.  For example, a value of 2 would
 		/// cause the third value label on the axis to be generated.
@@ -2931,7 +2777,7 @@ namespace ZedGraph
 		/// <param name="label">
 		/// Output only.  The resulting value label.
 		/// </param>
-		private void MakeLabel( GraphPane pane, int index, double dVal, out string label )
+		private void MakeLabel( int index, double dVal, out string label )
 		{
 			// draw the label
 			if ( this.IsText )
@@ -2964,20 +2810,13 @@ namespace ZedGraph
 								
 				label = String.Format( tmpStr, Math.Pow( 10.0, dVal ) );
 			}
-			else // linear or ordinal
+			else // linear or ordinal or (log && ! isUseTenPower)
 			{
 				double	scaleMult = Math.Pow( (double) 10.0, this.scaleMag );
 
 				string tmpStr = "{0:F*}";
 				tmpStr = tmpStr.Replace("*", this.numDec.ToString("D") );
 				label = String.Format( tmpStr, dVal / scaleMult );
-
-				if ( pane.BarType == BarType.PercentStack )															//rpk
-				{
-					if (( this is YAxis && pane.BarBase == BarBase.X  ) ||
-						( this is XAxis && pane.BarBase == BarBase.Y ) )
-						label = label + "%" ;
-				}
 			}
 		}
 
@@ -3436,7 +3275,6 @@ namespace ZedGraph
 				}
 				else
 					this.step = (int) ( ( this.max - this.min - 1.0 ) / Default.MaxTextLabels ) + 1.0;
-				
 			}
 			else
 			{

@@ -30,8 +30,7 @@ namespace ZedGraph
 	/// 
 	/// <author> Jerry Vos based on code by John Champion
 	/// modified by John Champion</author>
-	/// <version> $Revision: 3.16 $ $Date: 2005-01-09 03:52:20 $ </version>
-	[Serializable]
+	/// <version> $Revision: 3.12 $ $Date: 2004-12-10 05:45:55 $ </version>
 	public class PointPairList : CollectionPlus, ICloneable
 	{
 	#region Fields
@@ -72,18 +71,6 @@ namespace ZedGraph
 		/// </summary>
 		public PointPairList()
 		{
-			sorted = false;
-		}
-
-		/// <summary>
-		/// Constructor to initialize the PointPairList from two arrays of
-		/// type double.
-		/// </summary>
-		public PointPairList( double[] x )
-		{
-			Add( x);
-			
-			sorted = false;
 		}
 
 		/// <summary>
@@ -141,7 +128,7 @@ namespace ZedGraph
 		public int Add( PointPair point )
 		{
 			sorted = false;
-			return List.Add( new PointPair( point ) );
+			return List.Add( point );
 		}
 
 		/// <summary>
@@ -164,38 +151,6 @@ namespace ZedGraph
 		}
 
 		/// <summary>
-		/// Add values to the PointPairList from an array of type double.
-		/// Each value in the array represents the value of a <see cref="PieSlice"/> 
-		/// in a <see cref="Pie"/>.  The values will stored in <see cref="PointPair.X"/>.
-		/// <see cref="PointPair.Missing"/> will be assigned to <see cref="PointPair.Y"/>.
-		/// </summary>
-		/// <param name="x">A double[] array of X values</param>
-		/// <returns>The zero-based ordinal index where the last point was added in the list,
-		/// or -1 if no points were added.</returns>
-		/// <seealso cref="IList.Add"/>
-		public int Add( double[] x )
-		{
-			int rv = -1;
-			
-			if ( x == null )
-				return rv ;
-
-			for ( int i=0; i<x.Length; i++ )
-			{
-				PointPair	point = new PointPair( 0, 0, 0 );
-				point.X = x[i] ;
-				point.Y = PointPair.Missing;
-					
-				rv = List.Add( point );
-			}
-			
-			sorted = false;
-			return rv;
-		}
-
-
-		
-		/// <summary>
 		/// Add a set of points to the PointPairList from two arrays of type double.
 		/// If either array is null, then a set of ordinal values is automatically
 		/// generated in its place (see <see cref="AxisType.Ordinal"/>.
@@ -209,6 +164,7 @@ namespace ZedGraph
 		/// <seealso cref="IList.Add"/>
 		public int Add( double[] x, double[] y )
 		{
+			PointPair	point = new PointPair( 0, 0, 0 );
 			int 		len = 0,
 						rv = -1;
 			
@@ -219,7 +175,6 @@ namespace ZedGraph
 			
 			for ( int i=0; i<len; i++ )
 			{
-				PointPair	point = new PointPair( 0, 0, 0 );
 				if ( x == null )
 					point.X = (double) i + 1.0;
 				else if ( i < x.Length )
@@ -257,6 +212,7 @@ namespace ZedGraph
 		/// <seealso cref="IList.Add"/>
 		public int Add( double[] x, double[] y, double[] z )
 		{
+			PointPair	point = new PointPair();
 			int 		len = 0,
 						rv = -1;
 			
@@ -269,8 +225,6 @@ namespace ZedGraph
 						
 			for ( int i=0; i<len; i++ )
 			{
-				PointPair point = new PointPair();
-
 				if ( x == null )
 					point.X = (double) i + 1.0;
 				else if ( i < x.Length )
@@ -310,22 +264,6 @@ namespace ZedGraph
 		{
 			sorted = false;
 			PointPair	point = new PointPair( x, y );
-			return List.Add( point );
-		}
-
-		/// <summary>
-		/// Add a single point to the <see cref="PointPairList"/> from a single value of type double.
-		/// The value will be stored in <see cref="PointPair.X"/>	, while <see cref="PointPair.Y"/>
-		/// will be set to <see cref="PointPair.Missing"/>.	Normally used to assign a value to
-		/// <see cref="PieSlice.value"/>.
-		/// </summary>
-		/// <param name="x">The X value</param>
-		/// <returns>The zero-based ordinal index where the point was added in the list.</returns>
-		/// <seealso cref="IList.Add"/>
-		public int Add( double x )
-		{
-			sorted = false;
-			PointPair	point = new PointPair( x, PointPair.Missing );
 			return List.Add( point );
 		}
 
@@ -444,7 +382,11 @@ namespace ZedGraph
 			for ( int i=0; i<this.Count; i++ )
 			{
 				if ( i < sumList.Count )
-					this[i].Y += sumList[i].Y;
+				{
+					PointPair point = this[i];
+					point.Y += sumList[i].Y;
+					this[i] = point;
+				}
 			}
 				
 			//sorted = false;
@@ -463,238 +405,14 @@ namespace ZedGraph
 			for ( int i=0; i<this.Count; i++ )
 			{
 				if ( i < sumList.Count )
-					this[i].X += sumList[i].X;
+				{
+					PointPair point = this[i];
+					point.X += sumList[i].X;
+					this[i] = point;
+				}
 			}
 				
 			sorted = false;
-		}
-
-		/// <summary>
-		/// Linearly interpolate the data to find an arbitraty Y value that corresponds to the specified X value.
-		/// </summary>
-		/// <remarks>
-		/// This method uses linear interpolation with a binary search algorithm.  It therefore
-		/// requires that the x data be monotonically increasing.  Missing values are not allowed.  This
-		/// method will extrapolate outside the range of the PointPairList if necessary.
-		/// </remarks>
-		/// <param name="xTarget">The target X value on which to interpolate</param>
-		/// <returns>The Y value that corresponds to the <see paramref="xTarget"/> value.</returns>
-		public double InterpolateX( double xTarget )
-		{
-			int lo, mid, hi;
-			if ( this.Count < 2 )
-				throw new Exception( "Error: Not enough points in curve to interpolate" );
-
-			if ( xTarget <= this[0].X )
-			{
-				lo = 0;
-				hi = 1;
-			}
-			else if ( xTarget >= this[this.Count-1].X )
-			{
-				lo = this.Count - 2;
-				hi = this.Count - 1;
-			}
-			else
-			{
-				// if x is within the bounds of the x table, then do a binary search
-				// in the x table to find table entries that bound the x value
-				lo = 0;
-				hi = this.Count - 1;
-			    
-				// limit to 1000 loops to avoid an infinite loop problem
-				int j;
-				for ( j=0; j<1000 && hi > lo + 1; j++ )
-				{
-					mid = ( hi + lo ) / 2;
-					if ( xTarget > this[mid].X )
-						lo = mid;
-					else
-						hi = mid;
-				}
-
-				if ( j >= 1000 )
-					throw new Exception( "Error: Infinite loop in interpolation" );
-			}
-
-			return ( xTarget - this[lo].X ) / ( this[hi].X - this[lo].X ) *
-					( this[hi].Y - this[lo].Y ) + this[lo].Y;
-
-		}
-
-		/// <summary>
-		/// Use Cardinal Splines to Interpolate the data to find an arbitraty Y value that corresponds to
-		/// the specified X value.
-		/// </summary>
-		/// <remarks>
-		/// This method uses cardinal spline interpolation with a binary search algorithm.  It therefore
-		/// requires that the x data be monotonically increasing.  Missing values are not allowed.  This
-		/// method will not extrapolate outside the range of the PointPairList (it returns
-		/// <see cref="PointPair.Missing"/> if extrapolation would be required).  WARNING: Cardinal spline
-		/// interpolation can generate curves with non-unique X values for higher tension settings.  That is,
-		/// there may be multiple X values for the same Y value.  This routine follows the path of the
-		/// spline curve until it reaches the FIRST OCCURRENCE of the target X value.  It does not check
-		/// to see if other solutions are possible.
-		/// </remarks>
-		/// <param name="xTarget">The target X value on which to interpolate</param>
-		/// <param name="tension">The tension setting that controls the curvature of the spline fit.
-		/// Typical values are between 0 and 1, where 0 is a linear fit, and 1 is lots of "roundness".
-		/// Values greater than 1 may give odd results.
-		/// </param>
-		/// <returns>The Y value that corresponds to the <see paramref="xTarget"/> value.</returns>
-		public double SplineInterpolateX( double xTarget, double tension )
-		{
-			int lo, mid, hi;
-			if ( this.Count < 2 )
-				throw new Exception( "Error: Not enough points in curve to interpolate" );
-
-			// Extrapolation not allowed
-			if ( xTarget <= this[0].X || xTarget >= this[this.Count-1].X )
-				return PointPair.Missing;
-			else
-			{
-				// if x is within the bounds of the x table, then do a binary search
-				// in the x table to find table entries that bound the x value
-				lo = 0;
-				hi = this.Count - 1;
-			    
-				// limit to 1000 loops to avoid an infinite loop problem
-				int j;
-				for ( j=0; j<1000 && hi > lo + 1; j++ )
-				{
-					mid = ( hi + lo ) / 2;
-					if ( xTarget > this[mid].X )
-						lo = mid;
-					else
-						hi = mid;
-				}
-
-				if ( j >= 1000 )
-					throw new Exception( "Error: Infinite loop in interpolation" );
-			}
-
-			// At this point, we know the two bounding points around our point of interest
-			// We need the four points that surround our point
-
-			double X0, X1, X2, X3;
-			double Y0, Y1, Y2, Y3;
-			double B0, B1, B2, B3;
-
-			X1 = this[lo].X;
-			X2 = this[hi].X;
-			Y1 = this[lo].Y;
-			Y2 = this[hi].Y;
-
-			// if we are at either the beginning of the table or the end, then make up a before
-			// and/or after point to fill in the four points
-			if ( lo == 0 )
-			{
-				X0 = X1 - ( X2 - X1 );
-				Y0 = Y1 - ( Y2 - Y1 );
-			}
-			else
-			{
-				X0 = this[lo-1].X;
-				Y0 = this[lo-1].Y;
-			}
-
-			if ( hi == this.Count - 1 )
-			{
-				X3 = X2 + ( X2 - X1 );
-				Y3 = Y2 + ( Y2 - Y1 );
-			}
-			else
-			{
-				X3 = this[hi+1].X;
-				Y3 = this[hi+1].Y;
-			}
-
-			double	newX, newY,
-					lastX = X1,
-					lastY = Y1;
-
-			// Do 100 steps to find the result
-			for ( double t=0.01; t<=1; t+=0.01 )
-			{
-				B0 = (1 - t) * (1 - t) * (1 - t);
-				B1 = 3.0 * t * (1 - t) * (1 - t);
-				B2 = 3.0 * t * t * (1 - t);
-				B3 = t * t * t;
-
-				newX = X1 * B0 + (X1 + (X2 - X0) * tension) * B1 +
-						(X2 - (X3 - X1) * tension) * B2 + X2 * B3;
-				newY = Y1 * B0 + (Y1 + (Y2 - Y0) * tension) * B1 +
-						(Y2 - (Y3 - Y1) * tension) * B2 + Y2 * B3;
-
-				// We are looking for the first X that exceeds the target
-				if ( newX >= xTarget )
-				{
-					// We now have two bounding X values around our target
-					// use linear interpolation to minimize the discretization
-					// error.
-					return ( xTarget - lastX ) / ( newX - lastX ) *
-							( newY - lastY ) + lastY;
-				}
-
-				lastX = newX;
-				lastY = newY;
-			}
-
-			// This should never happen
-			return Y2;
-		}
-
-		/// <summary>
-		/// Linearly interpolate the data to find an arbitraty X value that corresponds to the specified Y value.
-		/// </summary>
-		/// <remarks>
-		/// This method uses linear interpolation with a binary search algorithm.  It therefore
-		/// requires that the Y data be monotonically increasing.  Missing values are not allowed.  This
-		/// method will extrapolate outside the range of the PointPairList if necessary.
-		/// </remarks>
-		/// <param name="yTarget">The target Y value on which to interpolate</param>
-		/// <returns>The X value that corresponds to the <see paramref="yTarget"/> value.</returns>
-		public double InterpolateY( double yTarget )
-		{
-			int lo, mid, hi;
-			if ( this.Count < 2 )
-				throw new Exception( "Error: Not enough points in curve to interpolate" );
-
-			if ( yTarget <= this[0].Y )
-			{
-				lo = 0;
-				hi = 1;
-			}
-			else if ( yTarget >= this[this.Count-1].Y )
-			{
-				lo = this.Count - 2;
-				hi = this.Count - 1;
-			}
-			else
-			{
-				// if y is within the bounds of the y table, then do a binary search
-				// in the y table to find table entries that bound the y value
-				lo = 0;
-				hi = this.Count - 1;
-			    
-				// limit to 1000 loops to avoid an infinite loop problem
-				int j;
-				for ( j=0; j<1000 && hi > lo + 1; j++ )
-				{
-					mid = ( hi + lo ) / 2;
-					if ( yTarget > this[mid].Y )
-						lo = mid;
-					else
-						hi = mid;
-				}
-
-				if ( j >= 1000 )
-					throw new Exception( "Error: Infinite loop in interpolation" );
-			}
-
-			return ( yTarget - this[lo].Y ) / ( this[hi].Y - this[lo].Y ) *
-					( this[hi].X - this[lo].X ) + this[lo].X;
-
 		}
 
 		/// <summary>

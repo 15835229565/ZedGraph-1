@@ -20,8 +20,6 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -31,9 +29,8 @@ namespace ZedGraph
 	/// </summary>
 	/// 
 	/// <author> John Champion </author>
-	/// <version> $Revision: 3.8 $ $Date: 2005-01-16 03:46:12 $ </version>
-	[Serializable]
-	public class Line : ICloneable, ISerializable
+	/// <version> $Revision: 3.4.2.1 $ $Date: 2005-01-16 04:11:47 $ </version>
+	public class Line : ICloneable
 	{
 	#region Fields
 		/// <summary>
@@ -322,55 +319,7 @@ namespace ZedGraph
 			return new Line( this ); 
 		}
 	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected Line( SerializationInfo info, StreamingContext context )
-		{
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			width = info.GetSingle( "width" );
-			style = (DashStyle) info.GetValue( "style", typeof(DashStyle) );
-			isVisible = info.GetBoolean( "isVisible" );
-			isSmooth = info.GetBoolean( "isSmooth" );
-			smoothTension = info.GetSingle( "smoothTension" );
-			color = (Color) info.GetValue( "color", typeof(Color) );
-			stepType = (StepType) info.GetValue( "stepType", typeof(StepType) );
-			fill = (Fill) info.GetValue( "fill", typeof(Fill) );
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-			info.AddValue( "schema", schema );
-			info.AddValue( "width", width );
-			info.AddValue( "style", style );
-			info.AddValue( "isVisible", isVisible );
-			info.AddValue( "isSmooth", isSmooth );
-			info.AddValue( "smoothTension", smoothTension );
-			info.AddValue( "color", color );
-			info.AddValue( "stepType", stepType );
-			info.AddValue( "fill", fill );
-		}
-	#endregion
-
+	
 	#region Rendering Methods
 		/// <summary>
 		/// Do all rendering associated with this <see cref="Line"/> to the specified
@@ -391,20 +340,20 @@ namespace ZedGraph
         /// A reference to the <see cref="ZedGraph.GraphPane"/> object that is the parent or
 		/// owner of this object.
 		/// </param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
+		/// <param name="points">A <see cref="PointPairList"/> of point values representing this
 		/// curve.</param>
 		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
 		/// true for the "Y2" axis, false for the "Y" axis.</param>
-		public void Draw( Graphics g, GraphPane pane, LineItem curve,
-                        bool isY2Axis, double scaleFactor )
+		public void Draw( Graphics g, GraphPane pane, PointPairList points,
+                        bool isY2Axis, double scaleFactor)
         {
 			// If the line is being shown, draw it
 			if ( this.IsVisible )
 			{
 				if ( this.IsSmooth || this.Fill.IsVisible )
-                    DrawSmoothFilledCurve( g, pane, curve, isY2Axis, scaleFactor );
+                    DrawSmoothFilledCurve(g, pane, points, isY2Axis, scaleFactor);
                 else
-                    DrawCurve( g, pane, curve, isY2Axis, scaleFactor );
+                    DrawCurve(g, pane, points, isY2Axis, scaleFactor);
             }
 		}		
 
@@ -434,12 +383,12 @@ namespace ZedGraph
 		/// line segment in screen pixel units</param>
 		/// <param name="y2">The y position of the ending point that defines the
 		/// line segment in screen pixel units</param>
-        public void DrawSegment( Graphics g, GraphPane pane, float x1, float y1,
-                            float x2, float y2, double scaleFactor )
+        public void DrawSegment(Graphics g, GraphPane pane, float x1, float y1,
+                            float x2, float y2, double scaleFactor)
         {
 			if ( this.isVisible && !this.Color.IsEmpty )
 			{
-                Pen pen = new Pen( this.color, pane.ScaledPenWidth(width, scaleFactor) );
+                Pen pen = new Pen(this.color, pane.ScaledPenWidth(width, scaleFactor));
                 pen.DashStyle = this.Style;
 				g.DrawLine( pen, x1, y1, x2, y2 );
 			}
@@ -468,19 +417,18 @@ namespace ZedGraph
         /// A reference to the <see cref="GraphPane"/> object that is the parent or
 		/// owner of this object.
 		/// </param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
+		/// <param name="points">A <see cref="PointPairList"/> of point values representing this
 		/// curve.</param>
 		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
 		/// true for the "Y2" axis, false for the "Y" axis.</param>
 		public void DrawSmoothFilledCurve( Graphics g, GraphPane pane,
-                                LineItem curve, bool isY2Axis, double scaleFactor )
+                                PointPairList points, bool isY2Axis, double scaleFactor)
         {
 			PointF[]	arrPoints;
 			int			count;
-			PointPairList points = curve.Points;
 
 			if ( this.IsVisible && !this.Color.IsEmpty && points != null &&
-				BuildPointsArray( pane, curve, isY2Axis, out arrPoints, out count ) &&
+				BuildPointsArray( pane, points, isY2Axis, out arrPoints, out count ) &&
 				count > 2 )
 			{
                 Pen pen = new Pen(this.Color, pane.ScaledPenWidth(width, scaleFactor));
@@ -495,7 +443,8 @@ namespace ZedGraph
 
 					double yMin = pane.YAxis.Min < 0 ? 0.0 : pane.YAxis.Min;
 					//double yMin = pane.YAxis.Min;
-					CloseCurve( pane, curve, arrPoints, isY2Axis, count, yMin, path );
+
+					CloseCurve( pane, arrPoints, isY2Axis, count, yMin, path );
 				
 					Brush brush = this.fill.MakeBrush( path.GetBounds() );
 					g.FillPath( brush, path );
@@ -531,20 +480,18 @@ namespace ZedGraph
         /// A reference to the <see cref="GraphPane"/> object that is the parent or
 		/// owner of this object.
 		/// </param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
+		/// <param name="points">A <see cref="PointPairList"/> of point values representing this
 		/// curve.</param>
 		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
 		/// true for the "Y2" axis, false for the "Y" axis.</param>
 		public void DrawCurve( Graphics g, GraphPane pane,
-                                LineItem curve, bool isY2Axis, double scaleFactor)
+                                PointPairList points, bool isY2Axis, double scaleFactor)
         {
 			float	tmpX, tmpY,
 					lastX = 0,
 					lastY = 0;
-			double	curX, curY, lowVal;
+			double	curX, curY;
 			bool	broke = true;
-			PointPairList points = curve.Points;
-			BarValueHandler valueHandler = new BarValueHandler( pane );
 
             Pen pen = new Pen(this.color, pane.ScaledPenWidth(width, scaleFactor));
             pen.DashStyle = this.Style;
@@ -554,19 +501,8 @@ namespace ZedGraph
 				// Loop over each point in the curve
 				for ( int i=0; i<points.Count; i++ )
 				{
-					if ( pane.LineType == LineType.Stack )
-					{
-						if ( !valueHandler.GetBarValues( curve, i, out curX, out lowVal, out curY ) )
-						{
-							curX = PointPair.Missing;
-							curY = PointPair.Missing;
-						}
-					}
-					else
-					{
-						curX = points[i].X;
-						curY = points[i].Y;
-					}
+					curX = points[i].X;
+					curY = points[i].Y;
 					
 					// Any value set to double max is invalid and should be skipped
 					// This is used for calculated values that are out of range, divide
@@ -635,7 +571,7 @@ namespace ZedGraph
 		/// </summary>
 		/// <param name="pane">A reference to the <see cref="GraphPane"/> object that is the parent or
 		/// owner of this object.</param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
+		/// <param name="points">A <see cref="PointPairList"/> of point values representing this
 		/// curve.</param>
 		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
 		/// true for the "Y2" axis, false for the "Y" axis.</param>
@@ -644,129 +580,11 @@ namespace ZedGraph
 		/// <param name="count">The number of points contained in the "arrPoints"
 		/// parameter.</param>
 		/// <returns>true for a successful points array build, false for data problems</returns>
-		public bool BuildPointsArray( GraphPane pane, LineItem curve, bool isY2Axis,
-			out PointF[] arrPoints, out int count )
+		public bool BuildPointsArray( GraphPane pane, PointPairList points, bool isY2Axis,
+									out PointF[] arrPoints, out int count )
 		{
 			arrPoints = null;
 			count = 0;
-			PointPairList points = curve.Points;
-
-			if ( this.IsVisible && !this.Color.IsEmpty && points != null )
-			{
-				int		index = 0;
-				float	curX, curY,
-					lastX = 0,
-					lastY = 0;
-				double	x, y, lowVal;
-				BarValueHandler valueHandler = new BarValueHandler( pane );
-
-				// Step type plots get twice as many points.  Always add three points so there is
-				// room to close out the curve for area fills.
-				arrPoints = new PointF[ ( this.stepType == ZedGraph.StepType.NonStep ? 1 : 2 ) *
-											points.Count + 1 ];
-
-				// Loop over all points in the curve
-				for ( int i=0; i<points.Count; i++ )
-				{
-					// make sure that the current point is valid
-					if ( !points[i].IsInvalid )
-					{
-						// Get the user scale values for the current point
-						// use the valueHandler only for stacked types
-						if ( pane.LineType == LineType.Stack )
-						{
-							valueHandler.GetBarValues( curve, i, out x, out lowVal, out y );
-						}
-						// otherwise, just access the values directly.  Avoiding the valueHandler for
-						// non-stacked types is an optimization to minimize overhead in case there are
-						// a large number of points.
-						else
-						{
-							x = points[i].X;
-							y = points[i].Y;
-						}
-						
-						// Transform the user scale values to pixel locations
-						curX = pane.XAxis.Transform( i, x );
-						if ( isY2Axis )
-							curY = pane.Y2Axis.Transform( i, y );
-						else
-							curY = pane.YAxis.Transform( i, y );
-
-						// Add the pixel value pair into the points array
-						// Two points are added for step type curves
-						// ignore step-type setting for smooth curves
-						if ( this.isSmooth || index == 0 || this.StepType == StepType.NonStep )
-						{
-							arrPoints[index].X = curX;
-							arrPoints[index].Y = curY;
-						}
-						else if ( this.StepType == StepType.ForwardStep )
-						{
-							arrPoints[index].X = curX;
-							arrPoints[index].Y = lastY;
-							index++;
-							arrPoints[index].X = curX;
-							arrPoints[index].Y = curY;
-						}
-						else if ( this.StepType == StepType.RearwardStep )
-						{
-							arrPoints[index].X = lastX;
-							arrPoints[index].Y = curY;
-							index++;
-							arrPoints[index].X = curX;
-							arrPoints[index].Y = curY;
-						}
-
-						lastX = curX;
-						lastY = curY;
-						index++;
-						
-					}
-
-				}
-
-				// Make sure there is at least one valid point
-				if ( index == 0 )
-					return false;
-					
-				// Add an extra point at the end, since the smoothing algorithm requires it
-				arrPoints[index] = arrPoints[index-1];
-				index++;
-				
-				count = index;
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		/// <summary>
-		/// Build an array of <see cref="PointF"/> values (pixel coordinates) that represents
-		/// the low values for the current curve.
-		/// </summary>
-		/// <remarks>Note that this drawing routine ignores <see cref="PointPair.Missing"/>
-		/// values, but it does not "break" the line to indicate values are missing.
-		/// </remarks>
-		/// <param name="pane">A reference to the <see cref="GraphPane"/> object that is the parent or
-		/// owner of this object.</param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
-		/// curve.</param>
-		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
-		/// true for the "Y2" axis, false for the "Y" axis.</param>
-		/// <param name="arrPoints">An array of <see cref="PointF"/> values in pixel
-		/// coordinates representing the current curve.</param>
-		/// <param name="count">The number of points contained in the "arrPoints"
-		/// parameter.</param>
-		/// <returns>true for a successful points array build, false for data problems</returns>
-		public bool BuildLowPointsArray( GraphPane pane, LineItem curve, bool isY2Axis,
-			out PointF[] arrPoints, out int count )
-		{
-			arrPoints = null;
-			count = 0;
-			PointPairList points = curve.Points;
 
 			if ( this.IsVisible && !this.Color.IsEmpty && points != null )
 			{
@@ -774,42 +592,29 @@ namespace ZedGraph
 				float	curX, curY,
 						lastX = 0,
 						lastY = 0;
-				double	x, y, hiVal;
-				BarValueHandler valueHandler = new BarValueHandler( pane );
 
 				// Step type plots get twice as many points.  Always add three points so there is
 				// room to close out the curve for area fills.
-				arrPoints = new PointF[ ( this.stepType == ZedGraph.StepType.NonStep ? 1 : 2 ) *
-					( pane.LineType == LineType.Stack ? 2 : 1 ) *
-					points.Count + 1 ];
+				arrPoints = new PointF[ ( this.stepType == ZedGraph.StepType.NonStep ? 1 : 2 )
+											* points.Count + 1 ];
 
-				// Loop backwards over all points in the curve
-				// In this case an array of points was already built forward by BuildPointsArray().
-				// This time we build backwards to complete a loop around the area between two curves.
-				for ( int i=points.Count-1; i>=0; i-- )
+				for ( int i=0; i<points.Count; i++ )
 				{
-					// Make sure the current point is valid
 					if ( !points[i].IsInvalid )
 					{
-						// Get the user scale values for the current point
-						valueHandler.GetBarValues( curve, i, out x, out y, out hiVal );
-						
-						// Transform the user scale values to pixel locations
-						curX = pane.XAxis.Transform( i, x );
+						curX = pane.XAxis.Transform( i, points[i].X );
 						if ( isY2Axis )
-							curY = pane.Y2Axis.Transform( i, y );
+							curY = pane.Y2Axis.Transform( i, points[i].Y );
 						else
-							curY = pane.YAxis.Transform( i, y );
+							curY = pane.YAxis.Transform( i, points[i].Y );
 
-						// Add the pixel value pair into the points array
-						// Two points are added for step type curves
 						// ignore step-type setting for smooth curves
 						if ( this.isSmooth || index == 0 || this.StepType == StepType.NonStep )
 						{
 							arrPoints[index].X = curX;
 							arrPoints[index].Y = curY;
 						}
-						else if ( this.StepType == StepType.ForwardStep )
+						if ( this.StepType == StepType.ForwardStep )
 						{
 							arrPoints[index].X = curX;
 							arrPoints[index].Y = lastY;
@@ -841,7 +646,7 @@ namespace ZedGraph
 				// Add an extra point at the end, since the smoothing algorithm requires it
 				arrPoints[index] = arrPoints[index-1];
 				index++;
-				
+												
 				count = index;
 				return true;
 			}
@@ -852,12 +657,10 @@ namespace ZedGraph
 		}
 
 		/// <summary>
-		/// Close off a <see cref="GraphicsPath"/> that defines a curve
+		/// 
 		/// </summary>
 		/// <param name="pane">A reference to the <see cref="GraphPane"/> object that is the parent or
 		/// owner of this object.</param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
-		/// curve.</param>
 		/// <param name="arrPoints">An array of <see cref="PointF"/> values in screen pixel
 		/// coordinates representing the current curve.</param>
 		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
@@ -866,59 +669,18 @@ namespace ZedGraph
 		/// parameter.</param>
 		/// <param name="yMin">The Y axis value location where the X axis crosses.</param>
 		/// <param name="path">The <see cref="GraphicsPath"/> class that represents the curve.</param>
-		public void CloseCurve( GraphPane pane, LineItem curve, PointF[] arrPoints, bool isY2Axis,
+		public void CloseCurve( GraphPane pane, PointF[] arrPoints, bool isY2Axis,
 									int count, double yMin, GraphicsPath path )
 		{
-			// For non-stacked lines, the fill area is just the area between the curve and the X axis
-			if ( pane.LineType != LineType.Stack )
-			{
-				// Determine the current value for the bottom of the curve (usually the Y value where
-				// the X axis crosses)
-				float yBase;
-				if ( isY2Axis )
-					yBase = pane.Y2Axis.Transform( yMin );
-				else
-					yBase = pane.YAxis.Transform( yMin );
-
-				// Add three points to the path to move from the end of the curve (as defined by
-				// arrPoints) to the X axis, from there to the start of the curve at the X axis,
-				// and from there back up to the beginning of the curve.
-				path.AddLine( arrPoints[count-1].X, arrPoints[count-1].Y, arrPoints[count-1].X, yBase );
-				path.AddLine( arrPoints[count-1].X, yBase, arrPoints[0].X, yBase );
-				path.AddLine( arrPoints[0].X, yBase, arrPoints[0].X, arrPoints[0].Y );
-			}
-			// For stacked line types, the fill area is the area between this curve and the curve below it
+			float yBase;
+			if ( isY2Axis )
+				yBase = pane.Y2Axis.Transform( yMin );
 			else
-			{
-				PointF[]	arrPoints2;
-				int			count2;
-				
-				float		tension = this.isSmooth ? this.smoothTension : 0f;
-				
-				// Find the next lower curve in the curveList that is also a LineItem type, and use
-				// its smoothing properties for the lower side of the filled area.
-				int index = pane.CurveList.IndexOf( curve );
-				if ( index > 0 )
-				{
-					CurveItem tmpCurve;
-					for ( int i=index-1; i>=0; i-- )
-					{
-						tmpCurve = pane.CurveList[i];
-						if ( tmpCurve is LineItem )
-						{
-							tension = ((LineItem)tmpCurve).Line.IsSmooth ? ((LineItem)tmpCurve).Line.SmoothTension : 0f;
-							break;
-						}
-					}
-				}
-				
-				// Build another points array consisting of the low points (which are actually the points for
-				// the curve below the current curve)
-				BuildLowPointsArray( pane, curve, isY2Axis, out arrPoints2, out count2 );
-				
-				// Add the new points to the GraphicsPath
-				path.AddCurve( arrPoints2, 0, count2-2, tension );
-			}
+				yBase = pane.YAxis.Transform( yMin );
+			
+			path.AddLine( arrPoints[count-1].X, arrPoints[count-1].Y, arrPoints[count-1].X, yBase );
+			path.AddLine( arrPoints[count-1].X, yBase, arrPoints[0].X, yBase );
+			path.AddLine( arrPoints[0].X, yBase, arrPoints[0].X, arrPoints[0].Y );
 			
 		}
 

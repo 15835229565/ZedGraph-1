@@ -29,8 +29,7 @@ namespace ZedGraph
 	/// </summary>
 	/// 
 	/// <author> John Champion </author>
-	/// <version> $Revision: 3.5 $ $Date: 2005-01-06 02:46:27 $ </version>
-	[Serializable]
+	/// <version> $Revision: 3.3 $ $Date: 2004-12-10 05:45:55 $ </version>
 	public class GraphItemList : CollectionBase, ICloneable
 	{
 	#region Constructors
@@ -138,7 +137,7 @@ namespace ZedGraph
 			for ( int i=this.Count-1; i>=0; i-- )
 			{
 				GraphItem item = this[i];
-				if ( item.ZOrder == zOrder && item.IsVisible )
+				if ( item.ZOrder == zOrder )
 					item.Draw( g, pane, scaleFactor );
 			}
 		}

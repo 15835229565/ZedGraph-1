@@ -210,15 +210,7 @@ namespace ZedGraph
 		/// Locate the <see cref="Legend"/> as a floating object above the graph at the
 		/// location specified by <see cref="Legend.Location"/>.
 		/// </summary>
-		Float,
-		/// <summary>
-		/// Locate the <see cref="Legend"/> centered above the <see cref="GraphPane.AxisRect"/>
-		/// </summary>
-		TopCenter,
-		/// <summary>
-		/// Locate the <see cref="Legend"/> centered below the <see cref="GraphPane.AxisRect"/>
-		/// </summary>
-		BottomCenter
+		Float
 	};
 
 	/// <summary>
@@ -399,22 +391,6 @@ namespace ZedGraph
 	};
 	
 	/// <summary>
-	/// Enumeration type that defines the available types of <see cref="LineItem"/> graphs.
-	/// </summary>
-	/// <seealso cref="GraphPane.LineType"/>
-	public enum LineType
-	{
-		/// <summary>
-		/// Draw the lines as normal.  Any fill area goes from each line down to the X Axis.
-		/// </summary>
-		Normal,
-		/// <summary>
-		/// Draw the lines stacked on top of each other, accumulating values to a total value.
-		/// </summary>
-		Stack
-	}
-	
-	/// <summary>
 	/// Enumeration type that defines the available types of <see cref="BarItem"/> graphs.
 	/// </summary>
 	/// <seealso cref="GraphPane.BarType"/>
@@ -527,41 +503,5 @@ namespace ZedGraph
 	   /// this object in the <see cref="GraphItemList"/>.
 	   /// </summary>
 	   A_InFront
-	};
-	
-	public enum PieType
-	{
-		/// <summary>
-		///	Specifies that the <see cref="Pie"/> chart will be displayed in two dimensions
-		/// </summary>
-		Pie2D,
-
-		/// <summary>
-		///	Specifies that the <see cref="Pie"/> chart will be displayed in three dimensions
-		/// </summary>
-		Pie3D
-	} ;
-
-	public enum PieLabelType
-	{
-		/// <summary>
-		/// 
-		/// </summary>
-		Name_Value,
-
-		/// <summary>
-		/// 
-		/// </summary>
-		Name_Percent,		
-
-		/// <summary>
-		/// 
-		/// </summary>
-		Value,
-
-		/// <summary>
-		/// 
-		/// </summary>
-		Percent
 	};
 }

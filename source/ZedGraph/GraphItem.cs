@@ -20,8 +20,6 @@
 using System;
 using System.Drawing;
 using System.Collections;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -32,9 +30,8 @@ namespace ZedGraph
 	/// </summary>
 	/// 
 	/// <author> John Champion </author>
-	/// <version> $Revision: 3.10 $ $Date: 2005-01-16 03:46:12 $ </version>
-	[Serializable]
-	abstract public class GraphItem : ISerializable
+	/// <version> $Revision: 3.6.2.1 $ $Date: 2005-01-16 04:11:47 $ </version>
+	abstract public class GraphItem
 	{
 	#region Fields
 		/// <summary>
@@ -43,13 +40,6 @@ namespace ZedGraph
 		/// </summary>
 		protected Location location;
 
-		/// <summary>
-		/// Protected field that determines whether or not this <see cref="GraphItem"/>
-		/// is visible in the graph.  Use the public property <see cref="IsVisible"/> to
-		/// access this value.
-		/// </summary>
-		protected bool isVisible;
-		
 		/// <summary>
 		/// A tag object for use by the user.  This can be used to store additional
 		/// information associated with the <see cref="GraphItem"/>.  ZedGraph does
@@ -63,7 +53,6 @@ namespace ZedGraph
 		/// <see cref="ZOrder"/> to access this value.
 		/// </summary>
 		protected ZOrder zOrder;
-
 	#endregion
 
 	#region Defaults
@@ -126,17 +115,6 @@ namespace ZedGraph
 			get { return zOrder; }
 			set { zOrder = value; }
 		}
-		
-		/// <summary>
-		/// Gets or sets a value that determines if this <see cref="GraphItem"/> will be
-		/// visible in the graph.  true displays the item, false hides it.
-		/// </summary>
-		public bool IsVisible
-		{
-			get { return isVisible; }
-			set { isVisible = value; }
-		}
-		
 	#endregion
 	
 	#region Constructors
@@ -244,7 +222,6 @@ namespace ZedGraph
 		/// the vertical alignment of the object with respect to the (x,y) location</param>
 		public GraphItem( float x, float y, CoordType coordType, AlignH alignH, AlignV alignV )
 		{
-			this.isVisible = true;
 			this.Tag = null;
 			this.zOrder = ZOrder.A_InFront;
 			this.location = new Location( x, y, coordType, alignH, alignV );
@@ -277,7 +254,6 @@ namespace ZedGraph
 		public GraphItem( float x, float y, float x2, float y2, CoordType coordType,
 					AlignH alignH, AlignV alignV )
 		{
-			this.isVisible = true;
 			this.Tag = null;
 			this.zOrder = ZOrder.A_InFront;
 			this.location = new Location( x, y, x2, y2, coordType, alignH, alignV );
@@ -289,7 +265,6 @@ namespace ZedGraph
 		/// <param name="rhs">The <see cref="GraphItem"/> object from which to copy</param>
 		public GraphItem( GraphItem rhs )
 		{
-			this.isVisible = rhs.IsVisible;
 			this.Tag = rhs.Tag;
 			this.zOrder = rhs.ZOrder;
 			this.location = (Location) rhs.Location.Clone();
@@ -301,47 +276,7 @@ namespace ZedGraph
 		/// <returns>A new, independent copy of the GraphItem</returns>
 		public abstract object Clone();
 	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected GraphItem( SerializationInfo info, StreamingContext context )
-		{
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			location = (Location) info.GetValue( "location", typeof(Location) );
-			isVisible = info.GetBoolean( "isVisible" );
-			Tag = info.GetValue( "Tag", typeof(object) );
-			zOrder = (ZOrder) info.GetValue( "zOrder", typeof(ZOrder) );
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-			info.AddValue( "schema", schema );
-			info.AddValue( "location", location );
-			info.AddValue( "isVisible", isVisible );
-			info.AddValue( "Tag", Tag );
-			info.AddValue( "zOrder", zOrder );
-		}
-	#endregion
-
+	
 	#region Rendering Methods
 		/// <summary>
 		/// Render this <see cref="GraphItem"/> object to the specified <see cref="Graphics"/> device.

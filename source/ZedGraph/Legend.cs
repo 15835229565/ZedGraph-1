@@ -19,8 +19,6 @@
 
 using System;
 using System.Drawing;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -30,9 +28,8 @@ namespace ZedGraph
 	/// </summary>
 	/// 
 	/// <author> John Champion </author>
-	/// <version> $Revision: 3.15 $ $Date: 2005-01-16 03:46:12 $ </version>
-	[Serializable]
-	public class Legend : ICloneable, ISerializable
+	/// <version> $Revision: 3.11 $ $Date: 2004-12-12 20:19:54 $ </version>
+	public class Legend : ICloneable
 	{
 	#region private Fields
 	
@@ -346,53 +343,7 @@ namespace ZedGraph
 			return new Legend( this ); 
 		}
 	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected Legend( SerializationInfo info, StreamingContext context )
-		{
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			position = (LegendPos) info.GetValue( "position", typeof(LegendPos) );
-			isHStack = info.GetBoolean( "isHStack" );
-			isVisible = info.GetBoolean( "isVisible" );
-			fill = (Fill) info.GetValue( "fill", typeof(Fill) );
-			border = (Border) info.GetValue( "border", typeof(Border) );
-			fontSpec = (FontSpec) info.GetValue( "fontSpec", typeof(FontSpec) );
-			location = (Location) info.GetValue( "location", typeof(Location) );
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-			info.AddValue( "schema", schema );
-			info.AddValue( "position", position );
-			info.AddValue( "isHStack", isHStack );
-			info.AddValue( "isVisible", isVisible );
-			info.AddValue( "fill", fill );
-			info.AddValue( "border", border );
-			info.AddValue( "fontSpec", fontSpec );
-			info.AddValue( "location", location );
-		}
-	#endregion
-
+	
 	#region Rendering Methods
 		/// <summary>
 		/// Render the <see cref="Legend"/> to the specified <see cref="Graphics"/> device.
@@ -444,63 +395,29 @@ namespace ZedGraph
 			// Loop for each curve in the CurveList collection
 			foreach( CurveItem curve in pane.CurveList )
 			{
-				if ( curve.IsLegendLabelVisible)
-					if ( curve.IsPie )
-					{
-						foreach ( PieSlice slice in ((PieItem)curve).SliceList)
-						{
-							if ( slice.Label != ""  && slice.IsVisible)
-							{
-								// Calculate the x,y (TopLeft) location of the current
-								// curve legend label
-								// assuming:
-								//  charHeight/2 for the left margin, plus legendWidth for each
-								//    horizontal column
-								//  legendHeight is the line spacing, with no extra margin above
+				if ( curve.IsLegendLabelVisible && curve.Label != "" )
+				{
+					// Calculate the x,y (TopLeft) location of the current
+					// curve legend label
+					// assuming:
+					//  charHeight/2 for the left margin, plus legendWidth for each
+					//    horizontal column
+					//  legendHeight is the line spacing, with no extra margin above
 
-								x = this.rect.Left + halfCharHeight / 2.0F +
-									( iEntry % hStack ) * legendWidth;
-								y = this.rect.Top + (int)( iEntry / hStack ) * legendHeight;
-							
-								// Draw the legend label for the current curve
-								this.FontSpec.Draw( g, pane, slice.Label, x + 2.5F * charHeight, y + legendHeight / 2.0F,
+					x = this.rect.Left + halfCharHeight / 2.0F +
+								( iEntry % hStack ) * legendWidth;
+					y = this.rect.Top + (int)( iEntry / hStack ) * legendHeight;
+					
+					// Draw the legend label for the current curve
+					this.FontSpec.Draw( g, pane, curve.Label, x + 2.5F * charHeight, y + legendHeight / 2.0F,
 									AlignH.Left, AlignV.Center, scaleFactor );
-							
-								RectangleF rect = new RectangleF( x, y + legendHeight / 4.0F,
-									2 * charHeight, legendHeight / 2.0F );
-								slice.DrawLegendKey( g, pane, rect, scaleFactor );
+					
+					RectangleF rect = new RectangleF( x, y + legendHeight / 4.0F,
+											2 * charHeight, legendHeight / 2.0F );
+					curve.DrawLegendKey( g, pane, rect, scaleFactor );
 
-								// maintain a curve count for positioning
-								iEntry++;
-							}
-						}
-					}
-					else
-					{
-						if ( curve.Label != "" )
-						{  
-								// Calculate the x,y (TopLeft) location of the current
-							// curve legend label
-							// assuming:
-							//  charHeight/2 for the left margin, plus legendWidth for each
-							//    horizontal column
-							//  legendHeight is the line spacing, with no extra margin above
-
-							x = this.rect.Left + halfCharHeight / 2.0F +
-										( iEntry % hStack ) * legendWidth;
-							y = this.rect.Top + (int)( iEntry / hStack ) * legendHeight;
-							
-							// Draw the legend label for the current curve
-							this.FontSpec.Draw( g, pane, curve.Label, x + 2.5F * charHeight, y + legendHeight / 2.0F,
-											AlignH.Left, AlignV.Center, scaleFactor );
-							
-							RectangleF rect = new RectangleF( x, y + legendHeight / 4.0F,
-													2 * charHeight, legendHeight / 2.0F );
-							curve.DrawLegendKey( g, pane, rect, scaleFactor );
-
-							// maintain a curve count for positioning
-							iEntry++;
-						}
+					// maintain a curve count for positioning
+					iEntry++;
 				}
 			}
 		
@@ -609,7 +526,7 @@ namespace ZedGraph
 			this.rect = Rectangle.Empty;
 			hStack = 1;
 			legendWidth = 1;
-			legendHeight = 0;
+            legendHeight = 0;
 
             // If the legend is invisible, don't do anything
 			if ( !this.isVisible )
@@ -627,46 +544,26 @@ namespace ZedGraph
 			// Find the maximum width of the legend labels
 			foreach( CurveItem curve in pane.CurveList )
 			{
-				if (curve.IsLegendLabelVisible)
-					if ( curve.IsPie )
-					{
-						foreach ( PieSlice slice in ((PieItem)curve).SliceList)
-						{
-							if ( slice.Label != "" && slice.IsVisible )
-							{
-								// Calculate the width of the label save the max width
-								tmpWidth = this.FontSpec.GetWidth( g, slice.Label, scaleFactor );
+				if ( curve.IsLegendLabelVisible && curve.Label != "" )
+				{
+					// Calculate the width of the label save the max width
 
-								if ( tmpWidth > maxWidth )
-									maxWidth = tmpWidth;
-								nCurve++;
-							}
-						}
-					}
-					else				  //not a pie
-					{
-						if ( curve.Label != "" )
-						{
-							// Calculate the width of the label save the max width
+					tmpWidth = this.FontSpec.GetWidth( g, curve.Label, scaleFactor );
 
-							tmpWidth = this.FontSpec.GetWidth( g, curve.Label, scaleFactor );
+					if ( tmpWidth > maxWidth )
+						maxWidth = tmpWidth;
 
-							if ( tmpWidth > maxWidth )
-								maxWidth = tmpWidth;
+                    // Save the maximum symbol height for line-type curves
+                    if (curve is LineItem && ((LineItem)curve).Symbol.Size > legendHeight)
+                        legendHeight = ((LineItem)curve).Symbol.Size;
 
-							// Save the maximum symbol height for line-type curves
-							if (curve is LineItem && ((LineItem)curve).Symbol.Size > legendHeight)
-								legendHeight = ((LineItem)curve).Symbol.Size;
-
-							nCurve++;
-						}
-					}
+                    nCurve++;
+				}
 			}
 		
 			float widthAvail;
 		
 			// Is this legend horizontally stacked?
-			
 			if ( this.isHStack )
 			{
 				// Determine the available space for horizontal stacking
@@ -764,20 +661,7 @@ namespace ZedGraph
 						tAxisRect.Y += totLegHeight + halfCharHeight;
 						tAxisRect.Height -= totLegHeight + halfCharHeight;
 						break;
-					case LegendPos.TopCenter:
-						newRect.X = tAxisRect.Left + ( tAxisRect.Width - totLegWidth ) / 2;
-						newRect.Y = tAxisRect.Top;
-						
-						tAxisRect.Y += totLegHeight + halfCharHeight;
-						tAxisRect.Height -= totLegHeight + halfCharHeight;
-						break;
 					case LegendPos.Bottom:
-						newRect.X = tAxisRect.Left + ( tAxisRect.Width - totLegWidth ) /2 ;
-						newRect.Y = pane.PaneRect.Bottom - totLegHeight - gap;
-						
-						tAxisRect.Height -= totLegHeight + halfCharHeight;
-						break;
-					case LegendPos.BottomCenter:
 						newRect.X = tAxisRect.Left;
 						newRect.Y = pane.PaneRect.Bottom - totLegHeight - gap;
 						

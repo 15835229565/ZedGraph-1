@@ -1,19 +1,14 @@
 ZedGraph Class Library Revision History
 
-8-Jan-2005 (by Champion)
-  Fix CurveList.GetRange bug for stacked curves
-  Some code cleanup
-  Add SplineInterpolateX to PointPairList
+16-Jan-2005 Version 3.5.3 (by Champion)
+  Add ZedGraphControl.PointDateFormat
 
-7-Jan-2005 (by Martz)
-  Add expanded interface for Web Chart
-
-5-Jan-2005 (by Champion)
-  Add Line Stacking via GraphPane.LineType
-  Add Serialization - Implement ISerializable
+15-Jan-2005 (by Champion)
+  Fix GraphItem Copy Constructor
+  Fix +1 pixel error on ZedGraphControl bitmap
   Fix StringAlignment bug for FontSpec
-  Add Interpolation methods to PointPairList
-  Fix maxlabels bug for text axes
+  Fix maxlabels bug
+  Fix ordinal transform bug for lines/symbols
 
 10-Dec-2004 (by Champion)
   Add Z-Order control to GraphItems

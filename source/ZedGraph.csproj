@@ -18,7 +18,7 @@
                 OutputType = "Library"
                 PreBuildEvent = ""
                 PostBuildEvent = ""
-                RootNamespace = "ZedGraph"
+                RootNamespace = ""
                 RunPostBuildEvent = "OnBuildSuccess"
                 StartupObject = ""
             >
@@ -93,11 +93,6 @@
                     Name = "System.Windows.Forms"
                     AssemblyName = "System.Windows.Forms"
                     HintPath = "C:\WINDOWS\Microsoft.NET\Framework\v1.1.4322\System.Windows.Forms.dll"
-                />
-                <Reference
-                    Name = "system.design"
-                    AssemblyName = "System.Design"
-                    HintPath = "..\..\..\WINDOWS\Microsoft.NET\Framework\v1.1.4322\system.design.dll"
                 />
             </References>
         </Build>
@@ -243,16 +238,6 @@
                     BuildAction = "Compile"
                 />
                 <File
-                    RelPath = "ZedGraph\PieItem.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ZedGraph\PieSlice.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
                     RelPath = "ZedGraph\PointPair.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
@@ -314,16 +299,6 @@
                 />
                 <File
                     RelPath = "ZedGraph\ZedGraphWeb.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ZedGraph\ZedGraphWebData.cs"
-                    SubType = "Code"
-                    BuildAction = "Compile"
-                />
-                <File
-                    RelPath = "ZedGraph\ZedGraphWebTools.cs"
                     SubType = "Code"
                     BuildAction = "Compile"
                 />

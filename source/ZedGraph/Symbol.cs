@@ -20,8 +20,6 @@
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -32,9 +30,8 @@ namespace ZedGraph
 	/// </summary>
 	/// 
 	/// <author> John Champion </author>
-	/// <version> $Revision: 3.12 $ $Date: 2005-01-16 03:46:12 $ </version>
-	[Serializable]
-	public class Symbol : ICloneable, ISerializable
+	/// <version> $Revision: 3.7.2.1 $ $Date: 2005-01-16 04:11:47 $ </version>
+	public class Symbol : ICloneable
 	{
 	#region Fields
 		/// <summary>
@@ -229,49 +226,7 @@ namespace ZedGraph
 			return new Symbol( this ); 
 		}
 	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected Symbol( SerializationInfo info, StreamingContext context )
-		{
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			size = info.GetSingle( "size" );
-			type = (SymbolType) info.GetValue( "type", typeof(SymbolType) );
-			isVisible = info.GetBoolean( "isVisible" );
-			fill = (Fill) info.GetValue( "fill", typeof(Fill) );
-			border = (Border) info.GetValue( "border", typeof(Border) );
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-			info.AddValue( "schema", schema );
-			info.AddValue( "size", size );
-			info.AddValue( "type", type );
-			info.AddValue( "isVisible", isVisible );
-			info.AddValue( "fill", fill );
-			info.AddValue( "border", border );
-		}
-	#endregion
-
+	
 	#region Rendering Methods
 		/// <summary>
 		/// Draw the <see cref="Symbol"/> to the specified <see cref="Graphics"/> device
@@ -463,7 +418,6 @@ namespace ZedGraph
 					g.DrawLine( pen, x-hsize, y-hsize, x, y+hsize );
 					break;
 				case SymbolType.HDash:
-					pen.Width = 1 ;
 					g.DrawLine( pen, x-hsize, y, x+hsize1, y );
 					break;
 				case SymbolType.VDash:
@@ -661,7 +615,7 @@ namespace ZedGraph
 		/// A reference to the <see cref="GraphPane"/> object that is the parent or
 		/// owner of this object.
 		/// </param>
-		/// <param name="curve">A <see cref="LineItem"/> representing this
+		/// <param name="points">A <see cref="PointPairList"/> of point values representing this
 		/// curve.</param>
 		/// <param name="isY2Axis">A value indicating to which Y axis this curve is assigned.
 		/// true for the "Y2" axis, false for the "Y" axis.</param>
@@ -671,12 +625,11 @@ namespace ZedGraph
 		/// <see cref="GraphPane.CalcScaleFactor"/> method, and is used to proportionally adjust
 		/// font sizes, etc. according to the actual size of the graph.
 		/// </param>
-		public void Draw( Graphics g, GraphPane pane, LineItem curve,
+		public void Draw( Graphics g, GraphPane pane, PointPairList points,
 			bool isY2Axis, double scaleFactor )
 		{
 			float	tmpX, tmpY;
-			double	curX, curY, lowVal;
-			PointPairList points = curve.Points;
+			double	curX, curY;
 		
 			if ( points != null && ( this.border.IsVisible || this.fill.IsVisible ) )
 			{
@@ -689,25 +642,12 @@ namespace ZedGraph
 				GraphicsPath path = MakePath( g, scaleFactor );
 				RectangleF rect = path.GetBounds();
 				Brush brush = this.Fill.MakeBrush( rect );
-				BarValueHandler valueHandler = new BarValueHandler( pane );
 
 				// Loop over each defined point							
 				for ( int i=0; i<points.Count; i++ )
 				{
-					// Get the user scale values for the current point
-					// use the valueHandler only for stacked types
-					if ( pane.LineType == LineType.Stack )
-					{
-						valueHandler.GetBarValues( curve, i, out curX, out lowVal, out curY );
-					}
-					// otherwise, just access the values directly.  Avoiding the valueHandler for
-					// non-stacked types is an optimization to minimize overhead in case there are
-					// a large number of points.
-					else
-					{
-						curX = points[i].X;
-						curY = points[i].Y;
-					}
+					curX = points[i].X;
+					curY = points[i].Y;
 				
 					// Any value set to double max is invalid and should be skipped
 					// This is used for calculated values that are out of range, divide
@@ -715,28 +655,23 @@ namespace ZedGraph
 					// Also, any value <= zero on a log scale is invalid
 				
 					if (	curX != PointPair.Missing &&
-							curY != PointPair.Missing &&
-							!System.Double.IsNaN( curX ) &&
-							!System.Double.IsNaN( curY ) &&
-							!System.Double.IsInfinity( curX ) &&
-							!System.Double.IsInfinity( curY ) &&
-							( curX > 0 || !pane.XAxis.IsLog ) &&
-							( isY2Axis || !pane.YAxis.IsLog || curY > 0.0 ) &&
-							( !isY2Axis || !pane.Y2Axis.IsLog || curY > 0.0 ) )
+						curY != PointPair.Missing &&
+						!System.Double.IsNaN( curX ) &&
+						!System.Double.IsNaN( curY ) &&
+						!System.Double.IsInfinity( curX ) &&
+						!System.Double.IsInfinity( curY ) &&
+						( curX > 0 || !pane.XAxis.IsLog ) &&
+						( isY2Axis || !pane.YAxis.IsLog || curY > 0.0 ) &&
+						( !isY2Axis || !pane.Y2Axis.IsLog || curY > 0.0 ) )
 					{
-						// Transform the user scale values to pixel locations
 						tmpX = pane.XAxis.Transform( i, curX );
 						if ( isY2Axis )
 							tmpY = pane.Y2Axis.Transform( i, curY );
 						else
 							tmpY = pane.YAxis.Transform( i, curY );
 
-						// If the fill type for this symbol is a Gradient by value type,
-						// the make a brush corresponding to the appropriate current value
 						if ( this.fill.IsGradientValueType )
 							brush = fill.MakeBrush( rect, points[i] );
-						// Otherwise, the brush is already defined
-						// Draw the symbol at the specified pixel location
 						this.DrawSymbol( g, tmpX, tmpY, path, pen, brush );		
 					}
 				}

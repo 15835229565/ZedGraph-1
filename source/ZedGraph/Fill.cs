@@ -21,8 +21,6 @@ using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -33,9 +31,8 @@ namespace ZedGraph
 	/// </summary>
 	/// 
 	/// <author> John Champion </author>
-	/// <version> $Revision: 3.9 $ $Date: 2005-01-16 03:46:12 $ </version>
-	[Serializable]
-	public class Fill : ISerializable
+	/// <version> $Revision: 3.6 $ $Date: 2004-11-17 03:35:39 $ </version>
+	public class Fill
 	{
 	#region Fields
 
@@ -51,7 +48,7 @@ namespace ZedGraph
 		/// only applicable if the 
 		/// <see cref="Type"/> property is set to <see cref="ZedGraph.FillType.Brush"/>.
 		/// </summary>
-		public Brush		brush;
+		private Brush		brush;
 		/// <summary>
 		/// Private field that determines the type of color fill.  Use the public
 		/// property <see cref="Type"/> to access this value.  The fill color
@@ -88,34 +85,6 @@ namespace ZedGraph
 		private double	rangeMin;
 		private double	rangeMax;
 		private Bitmap	gradientBM;
-
-		/// <summary>
-		/// Private field that saves the image passed to the constructor.
-		/// This is used strictly for serialization.
-		/// </summary>
-		private Image	image;
-		/// <summary>
-		/// Private field that saves the image wrapmode passed to the constructor.
-		/// This is used strictly for serialization.
-		/// </summary>
-		private WrapMode wrapMode;
-		/// <summary>
-		/// Private field that saves the list of colors used to create the
-		/// <see cref="LinearGradientBrush"/> in the constructor.  This is used strictly
-		/// for serialization.
-		/// </summary>
-		private Color[] colorList;
-		/// <summary>
-		/// Private field that saves the list of positions used to create the
-		/// <see cref="LinearGradientBrush"/> in the constructor.  This is used strictly
-		/// for serialization.
-		/// </summary>
-		private float[] positionList;
-		/// <summary>
-		/// Private field the saves the angle of the fill.  This is used strictly for serialization.
-		/// </summary>
-		private float angle;
-
 
 	#endregion
 
@@ -160,13 +129,6 @@ namespace ZedGraph
 			this.rangeMin = 0.0;
 			this.rangeMax = 1.0;
 			gradientBM = null;
-
-			colorList = null;
-			positionList = null;
-			angle = 0;
-			image = null;
-			wrapMode = WrapMode.Tile;
-
 		}
 
 		/// <summary>
@@ -216,15 +178,9 @@ namespace ZedGraph
 		{
 			Init();
 			this.color = color2;
-
-			ColorBlend blend = new ColorBlend( 2 );
-			blend.Colors[0] = color1;
-			blend.Colors[1] = color2;
-			blend.Positions[0] = 0.0f;
-			blend.Positions[1] = 1.0f;
-			this.type = FillType.Brush;
-
-			this.CreateBrushFromBlend( blend, angle );
+			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
+				color1, color2, angle );
+				this.type = FillType.Brush;
 		}
 		
 		/// <summary>
@@ -233,8 +189,13 @@ namespace ZedGraph
 		/// </summary>
 		/// <param name="color1">The first color for the gradient fill</param>
 		/// <param name="color2">The second color for the gradient fill</param>
-		public Fill( Color color1, Color color2 ) : this( color1, color2, 0.0F )
+		public Fill( Color color1, Color color2 )
 		{
+			Init();
+			this.color = color2;
+			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
+				color1, color2, 0F );
+			this.type = FillType.Brush;
 		}
 		
 		/// <summary>
@@ -262,8 +223,6 @@ namespace ZedGraph
 		public Fill( Color color1, Color color2, Color color3, float angle )
 		{
 			Init();
-			this.color = color3;
-
 			ColorBlend blend = new ColorBlend( 3 );
 			blend.Colors[0] = color1;
 			blend.Colors[1] = color2;
@@ -271,9 +230,12 @@ namespace ZedGraph
 			blend.Positions[0] = 0.0f;
 			blend.Positions[1] = 0.5f;
 			blend.Positions[2] = 1.0f;
-			this.type = FillType.Brush;
 			
-			this.CreateBrushFromBlend( blend, angle );
+			this.color = color3;
+			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
+				color1, color2, angle );
+			((LinearGradientBrush)this.brush).InterpolationColors = blend;
+			this.type = FillType.Brush;
 		}
 		
 		/// <summary>
@@ -301,8 +263,10 @@ namespace ZedGraph
 		public Fill( ColorBlend blend, float angle )
 		{
 			Init();
+			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
+				Color.Red, Color.White, angle );
+			((LinearGradientBrush)this.brush).InterpolationColors = blend;
 			this.type = FillType.Brush;
-			this.CreateBrushFromBlend( blend, angle );
 		}
 
 		/// <summary>
@@ -334,17 +298,17 @@ namespace ZedGraph
 		public Fill( Color[] colors, float angle )
 		{
 			Init();
-			color = colors[ colors.Length - 1 ];
-
 			ColorBlend blend = new ColorBlend();
 			blend.Colors = colors;
 			blend.Positions = new float[colors.Length];
 			blend.Positions[0] = 0.0F;
 			for ( int i=1; i<colors.Length; i++ )
 				blend.Positions[i] = (float) i / (float)( colors.Length - 1 );
-			this.type = FillType.Brush;
 
-			this.CreateBrushFromBlend( blend, angle );
+			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
+				Color.Red, Color.White, angle );
+			((LinearGradientBrush)this.brush).InterpolationColors = blend;
+			this.type = FillType.Brush;
 		}
 
 		/// <summary>
@@ -380,14 +344,14 @@ namespace ZedGraph
 		public Fill( Color[] colors, float[] positions, float angle )
 		{
 			Init();
-			color = colors[ colors.Length - 1 ];
-
 			ColorBlend blend = new ColorBlend();
 			blend.Colors = colors;
 			blend.Positions = positions;
-			this.type = FillType.Brush;
 
-			this.CreateBrushFromBlend( blend, angle );
+			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
+				Color.Red, Color.White, angle );
+			((LinearGradientBrush)this.brush).InterpolationColors = blend;
+			this.type = FillType.Brush;
 		}
 
 		/// <summary>
@@ -402,8 +366,6 @@ namespace ZedGraph
 			this.color = Color.White;
 			this.brush = new TextureBrush( image, wrapMode );
 			this.type = FillType.Brush;
-			this.image = image;
-			this.wrapMode = wrapMode;
 		}
 		
 		/// <summary>
@@ -413,8 +375,12 @@ namespace ZedGraph
 		/// </summary>
 		/// <param name="brush">The <see cref="Brush"/> to use for fancy fills.  Typically, this would
 		/// be a <see cref="LinearGradientBrush"/> or a <see cref="TextureBrush"/> class</param>
-		public Fill( Brush brush ) : this( brush, Default.IsScaled )
+		public Fill( Brush brush )
 		{
+			Init();
+			this.color = Color.White;
+			this.brush = (Brush) brush.Clone();
+			this.type = FillType.Brush;
 		}
 		
 		/// <summary>
@@ -466,7 +432,7 @@ namespace ZedGraph
 		{
 			color = rhs.color;
 			if ( rhs.brush != null )
-				brush = (Brush) rhs.brush.Clone();
+				brush = (Brush) rhs.Brush.Clone();
 			else
 				brush = null;
 			type = rhs.type;
@@ -476,27 +442,7 @@ namespace ZedGraph
 			rangeMin = rhs.RangeMin;
 			rangeMax = rhs.RangeMax;
 			gradientBM = null;
-
-			if ( rhs.colorList != null )
-				colorList = (Color[]) rhs.colorList.Clone();
-			else
-				colorList = null;
-
-			if ( rhs.positionList != null )
-			{
-				positionList = (float[]) rhs.positionList.Clone();
-			}
-			else
-				positionList = null;
-
-			if ( rhs.image != null )
-				image = (Image) rhs.image.Clone();
-			else
-				image = null;
-
-			angle = rhs.angle;
-			wrapMode = rhs.wrapMode;
-		}
+        }
 		
 		/// <summary>
 		/// Deep-copy clone routine
@@ -505,103 +451,6 @@ namespace ZedGraph
 		public object Clone()
 		{ 
 			return new Fill( this ); 
-		}
-
-		private void CreateBrushFromBlend( ColorBlend blend, float angle )
-		{
-			this.angle = angle;
-
-			colorList = (Color[]) blend.Colors.Clone();
-			positionList = (float[]) blend.Positions.Clone();
-
-			this.brush = new LinearGradientBrush( new Rectangle( 0, 0, 100, 100 ),
-				Color.Red, Color.White, angle );
-			((LinearGradientBrush)this.brush).InterpolationColors = blend;
-		}
-	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected Fill( SerializationInfo info, StreamingContext context )
-		{
-			Init();
-
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			color = (Color) info.GetValue( "color", typeof(Color) );
-			//brush = (Brush) info.GetValue( "brush", typeof(Brush) );
-			//brushHolder = (BrushHolder) info.GetValue( "brushHolder", typeof(BrushHolder) );
-			type = (FillType) info.GetValue( "type", typeof(FillType) );
-			isScaled = info.GetBoolean( "isScaled" );
-			alignH = (AlignH) info.GetValue( "alignH", typeof(AlignH) );
-			alignV = (AlignV) info.GetValue( "alignV", typeof(AlignV) );
-			rangeMin = info.GetDouble( "rangeMin" );
-			rangeMax = info.GetDouble( "rangeMax" );
-
-			//BrushHolder brushHolder = (BrushHolder) info.GetValue( "brushHolder", typeof( BrushHolder ) );
-			//brush = brush;
-
-			colorList = (Color[]) info.GetValue( "colorList", typeof(Color[]) );
-			positionList = (float[]) info.GetValue( "positionList", typeof(float[]) );
-			angle = info.GetSingle( "angle" );
-			image = (Image) info.GetValue( "image", typeof(Image) );
-			wrapMode = (WrapMode) info.GetValue( "wrapMode", typeof(WrapMode) );
-
-			if ( colorList != null && positionList != null )
-			{
-				ColorBlend blend = new ColorBlend();
-				blend.Colors = colorList;
-				blend.Positions = positionList;
-				CreateBrushFromBlend( blend, angle );
-			}
-			else if ( image != null )
-			{
-				this.brush = new TextureBrush( image, wrapMode );
-			}
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-
-			info.AddValue( "schema", schema );
-			info.AddValue( "color", color );
-			//info.AddValue( "brush", brush );
-			//info.AddValue( "brushHolder", brushHolder );
-			info.AddValue( "type", type );
-			info.AddValue( "isScaled", isScaled );
-			info.AddValue( "alignH", alignH );
-			info.AddValue( "alignV", alignV );
-			info.AddValue( "rangeMin", rangeMin );
-			info.AddValue( "rangeMax", rangeMax );
-
-			//BrushHolder brushHolder = new BrushHolder();
-			//brush = brush;
-			//info.AddValue( "brushHolder", brushHolder );
-
-			info.AddValue( "colorList", colorList );
-			info.AddValue( "positionList", positionList );
-			info.AddValue( "angle", angle );
-			info.AddValue( "image", image );
-			info.AddValue( "wrapMode", wrapMode );
-
 		}
 	#endregion
 

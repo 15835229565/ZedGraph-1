@@ -20,8 +20,6 @@
 using System;
 using System.Drawing;
 using System.Collections;
-using System.Runtime.Serialization;
-using System.Security.Permissions;
 
 namespace ZedGraph
 {
@@ -34,12 +32,11 @@ namespace ZedGraph
 	/// 
 	/// <author> John Champion
 	/// modified by Jerry Vos </author>
-	/// <version> $Revision: 3.15 $ $Date: 2005-01-16 03:46:11 $ </version>
-	[Serializable]
-	abstract public class CurveItem : ISerializable
+	/// <version> $Revision: 3.11 $ $Date: 2004-12-10 17:54:50 $ </version>
+	abstract public class CurveItem
 	{
 	
-	#region Fields
+	#region Fields		
 		/// <summary>
 		/// protected field that stores a legend label string for this
 		/// <see cref="CurveItem"/>.  Use the public
@@ -89,7 +86,6 @@ namespace ZedGraph
 		/// not use this value for any purpose.
 		/// </summary>
 		public object Tag;
-
 	#endregion
 	
 	#region Constructors
@@ -110,19 +106,6 @@ namespace ZedGraph
 		{
 		}
 		
-		
-		public CurveItem( string label, int  y ) : this(  label, new PointPairList( ) )
-		{
-		}
-
-		
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="x"></param>
-		public CurveItem( double[] x) : this(  "", new PointPairList( x ) )
-		{
-		}
 		/// <summary>
 		/// <see cref="CurveItem"/> constructor the pre-specifies the curve label, the
 		/// x and y data values as a <see cref="PointPairList"/>, the curve
@@ -165,17 +148,7 @@ namespace ZedGraph
 		public CurveItem( string label ): this( label, null )
 		{
 		}
-		 /// <summary>
-		 /// 
-		 /// </summary>
-		public CurveItem(  )
-		{
-			this.label = "";
-			this.isY2Axis = false;
-			this.isVisible = true;
-			this.isLegendLabelVisible = true;
-			this.Tag = null;
-		}
+
 		/// <summary>
 		/// The Copy Constructor
 		/// </summary>
@@ -197,50 +170,6 @@ namespace ZedGraph
 		/// <returns>A new, independent copy of the CurveItem</returns>
 		public abstract object Clone();
 		
-	#endregion
-
-	#region Serialization
-		/// <summary>
-		/// Current schema value that defines the version of the serialized file
-		/// </summary>
-		public const int schema = 1;
-
-		/// <summary>
-		/// Constructor for deserializing objects
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data
-		/// </param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data
-		/// </param>
-		protected CurveItem( SerializationInfo info, StreamingContext context )
-		{
-			// The schema value is just a file version parameter.  You can use it to make future versions
-			// backwards compatible as new member variables are added to classes
-			int sch = info.GetInt32( "schema" );
-
-			label = info.GetString( "label" );
-			isY2Axis = info.GetBoolean( "isY2Axis" );
-			isVisible = info.GetBoolean( "isVisible" );
-			isLegendLabelVisible = info.GetBoolean( "isLegendLabelVisible" );
-			points = (PointPairList) info.GetValue( "points", typeof(PointPairList) );
-			Tag = info.GetValue( "Tag", typeof(object) );
-		}
-		/// <summary>
-		/// Populates a <see cref="SerializationInfo"/> instance with the data needed to serialize the target object
-		/// </summary>
-		/// <param name="info">A <see cref="SerializationInfo"/> instance that defines the serialized data</param>
-		/// <param name="context">A <see cref="StreamingContext"/> instance that contains the serialized data</param>
-		[SecurityPermissionAttribute(SecurityAction.Demand,SerializationFormatter=true)]
-		public virtual void GetObjectData( SerializationInfo info, StreamingContext context )
-		{
-			info.AddValue( "schema", schema );
-			info.AddValue( "label", label );
-			info.AddValue( "isY2Axis", isY2Axis );
-			info.AddValue( "isVisible", isVisible );
-			info.AddValue( "isLegendLabelVisible", isLegendLabelVisible );
-			info.AddValue( "points", points );
-			info.AddValue( "Tag", Tag );
-		}
 	#endregion
 	
 	#region Properties
@@ -265,35 +194,25 @@ namespace ZedGraph
 		{
 			get
 			{
-				if ( this is BarItem )
+				if ( this.IsBar )
 					return ((BarItem) this).Bar.Fill.Color;
-				else if ( this is LineItem && ((LineItem) this).Line.IsVisible )
+				else if ( ((LineItem) this).Line.IsVisible )
 					return ((LineItem) this).Line.Color;
-				else if ( this is LineItem )
-					return ((LineItem) this).Symbol.Border.Color;
-				else if ( this is ErrorBarItem )
-					return ((ErrorBarItem) this).ErrorBar.Color;
-				else if ( this is HiLowBarItem )
-					return ((HiLowBarItem) this).Bar.Fill.Color;
 				else
-					return Color.Empty;
+					return ((LineItem) this).Symbol.Border.Color;
 			}
 			set 
 			{
-				if ( this is BarItem )
+				if ( this.IsBar )
 				{
 					((BarItem) this).Bar.Fill.Color = value;
 				}
-				else if ( this is LineItem )
+				else
 				{
 					((LineItem) this).Line.Color			= value;
 					((LineItem) this).Symbol.Border.Color	= value;
 					((LineItem) this).Symbol.Fill.Color		= value;
 				}
-				else if ( this is ErrorBarItem )
-					((ErrorBarItem) this).ErrorBar.Color = value;
-				else if ( this is HiLowBarItem )
-					((HiLowBarItem) this).Bar.Fill.Color = value;
 			}
 		}
 
@@ -340,20 +259,10 @@ namespace ZedGraph
 		/// is a <see cref="BarItem"/>.  This does not include <see cref="HiLowBarItem"/>'s
 		/// or <see cref="ErrorBarItem"/>'s.
 		/// </summary>
-		/// <value>true for a bar chart, or false for a line or pie graph</value>
+		/// <value>true for a bar chart, or false for a line graph</value>
 		public bool IsBar
 		{
 			get { return this is BarItem; }
-		}
-		
-		/// <summary>
-		/// Determines whether this <see cref="CurveItem"/>
-		/// is a <see cref="PieItem"/>.
-		/// </summary>
-		/// <value>true for a pie chart, or false for a line or bar graph</value>
-		public bool IsPie
-		{
-			get { return this is PieItem; }
 		}
 		
 		/// <summary>
@@ -376,9 +285,9 @@ namespace ZedGraph
 			get 
 			{
 				if ( this.points == null )
-					return 0;
-				else
-					return this.points.Count;
+						return 0;
+					else
+						return this.points.Count;
 			}
 		}
 		
@@ -516,7 +425,7 @@ namespace ZedGraph
 		/// </param>
 		virtual public void MakeUnique( ColorSymbolRotator rotator )
 		{
-			this.Color = rotator.NextColor;
+			this.Color			= rotator.NextColor;
 		}
 	
 		/// <summary>
